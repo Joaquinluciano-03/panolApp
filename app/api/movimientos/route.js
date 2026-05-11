@@ -101,6 +101,7 @@ export async function POST(request) {
       const newEnUso = parseInt(invItem.STOCK_EN_USO, 10) + item.cantidad;
       const headers = invRows[0];
       const updatedRow = headers.map((h) => {
+        if (h === 'MODIFICADO_POR') return payload.email;
         if (h === 'STOCK_DISPONIBLE') return String(newDisponible);
         if (h === 'STOCK_EN_USO') return String(newEnUso);
         return invItem[h] ?? '';
@@ -134,6 +135,7 @@ export async function POST(request) {
       observaciones || '',
       payload.nombre + ' ' + payload.apellido, // PAÑOLERO
       idPlanilla,
+      payload.email,
     ];
 
     await appendRow(SHEETS.MOVIMIENTOS, row);

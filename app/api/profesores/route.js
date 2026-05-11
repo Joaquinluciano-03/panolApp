@@ -25,6 +25,6 @@ export async function POST(request) {
   if (!nombre || !apellido) {
     return NextResponse.json({ error: 'Nombre y apellido requeridos' }, { status: 400 });
   }
-  await appendRow(SHEETS.PROFESORES, [generateId(), nombre, apellido, materia_asociada || '', 'TRUE']);
+  await appendRow(SHEETS.PROFESORES, [generateId(), nombre, apellido, materia_asociada || '', 'TRUE', payload.email]);
   return NextResponse.json({ success: true }, { status: 201 });
 }

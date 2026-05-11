@@ -16,6 +16,6 @@ export async function POST(request) {
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   const { nombre } = await request.json();
   if (!nombre) return NextResponse.json({ error: 'Nombre requerido' }, { status: 400 });
-  await appendRow(SHEETS.MATERIAS, [generateId(), nombre, 'TRUE']);
+  await appendRow(SHEETS.MATERIAS, [generateId(), nombre, '', 'TRUE', payload.email]);
   return NextResponse.json({ success: true }, { status: 201 });
 }

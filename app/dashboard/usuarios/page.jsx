@@ -10,7 +10,7 @@ import Modal from '@/components/ui/Modal';
 import Input, { Select } from '@/components/ui/Input';
 import { Users, Plus, Pencil, ShieldCheck, Wrench } from 'lucide-react';
 
-const EMPTY_FORM = { nombre: '', apellido: '', email: '', password: '', rol: 'PAÑOLERO' };
+const EMPTY_FORM = { nombre: '', apellido: '', email: '', rol: 'PAÑOLERO' };
 
 export default function UsuariosPage() {
   const { authFetch, user } = useAuth();
@@ -40,29 +40,21 @@ export default function UsuariosPage() {
   const openCreate = () => { setEditUser(null); setForm(EMPTY_FORM); setModalOpen(true); };
   const openEdit = (u) => {
     setEditUser(u);
-    setForm({ nombre: u.NOMBRE, apellido: u.APELLIDO, email: u.EMAIL, password: '', rol: u.ROL });
+    setForm({ nombre: u.NOMBRE, apellido: u.APELLIDO, email: u.EMAIL, rol: u.ROL });
     setModalOpen(true);
   };
 
   const handleSave = async () => {
-    if (!form.nombre || !form.apellido || !form.email || (!editUser && !form.password)) {
+    if (!form.nombre || !form.apellido || !form.email) {
       toast('Completá todos los campos obligatorios', 'warning'); return;
-    }
-    if (form.password && form.password.length < 8) {
-      toast('La contraseña debe tener al menos 8 caracteres', 'warning'); return;
     }
     setSaving(true);
     try {
       if (editUser) {
         const body = { nombre: form.nombre, apellido: form.apellido, email: form.email, rol: form.rol };
-        if (form.password) body.password = form.password;
         const res = await authFetch(`/api/usuarios/${editUser.ID}`, { method: 'PUT', body: JSON.stringify(body) });
         if (!res.ok) throw new Error((await res.json()).error);
         toast('Usuario actualizado', 'success');
-      } else {
-        const res = await authFetch('/api/usuarios', { method: 'POST', body: JSON.stringify(form) });
-        if (!res.ok) throw new Error((await res.json()).error);
-        toast('Usuario creado correctamente', 'success');
       }
       setModalOpen(false);
       fetchData();
@@ -96,7 +88,6 @@ export default function UsuariosPage() {
           </h1>
           <p className="text-gray-400 text-sm mt-0.5">{usuarios.length} usuario{usuarios.length !== 1 ? 's' : ''} registrado{usuarios.length !== 1 ? 's' : ''}</p>
         </div>
-        <Button onClick={openCreate}><Plus className="w-4 h-4" /> Nuevo usuario</Button>
       </div>
 
       <div className="bg-gray-900 border border-gray-800/50 rounded-2xl overflow-hidden">
@@ -173,7 +164,7 @@ export default function UsuariosPage() {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editUser ? `Editar: ${editUser.NOMBRE} ${editUser.APELLIDO}` : 'Nuevo usuario'}
+        title={`Editar: ${editUser?.NOMBRE} ${editUser?.APELLIDO}`}
         size="sm"
       >
         <div className="space-y-4">
@@ -182,13 +173,6 @@ export default function UsuariosPage() {
             <Input label="Apellido *" value={form.apellido} onChange={(e) => setForm({ ...form, apellido: e.target.value })} />
           </div>
           <Input label="Email *" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <Input
-            label={editUser ? 'Nueva contraseña (dejar vacío para no cambiar)' : 'Contraseña * (mín. 8 caracteres)'}
-            type="password"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            placeholder={editUser ? '••••••••' : 'Mínimo 8 caracteres'}
-          />
           <Select label="Rol *" value={form.rol} onChange={(e) => setForm({ ...form, rol: e.target.value })}>
             <option value="PAÑOLERO">Pañolero</option>
             <option value="ADMIN">Administrador</option>
@@ -197,7 +181,7 @@ export default function UsuariosPage() {
         <div className="flex gap-3 mt-6">
           <Button variant="secondary" onClick={() => setModalOpen(false)} className="flex-1">Cancelar</Button>
           <Button onClick={handleSave} loading={saving} className="flex-1">
-            {editUser ? 'Guardar cambios' : 'Crear usuario'}
+            Guardar cambios
           </Button>
         </div>
       </Modal>

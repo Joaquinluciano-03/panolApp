@@ -18,6 +18,7 @@ export async function PUT(request, { params }) {
   const materia = materias[idx];
   const headers = rows[0];
   const updatedRow = headers.map((h) => {
+    if (h === 'MODIFICADO_POR') return payload.email;
     if (h === 'NOMBRE_MATERIA' && body.nombre !== undefined) return body.nombre;
     if (h === 'ACTIVO' && body.activo !== undefined) return body.activo ? 'TRUE' : 'FALSE';
     return materia[h] ?? '';

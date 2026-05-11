@@ -24,6 +24,7 @@ export async function PUT(request, { params }) {
     'UNIDAD_MEDIDA', 'DESCRIPCION', 'STOCK_MINIMO', 'ACTIVO',
   ];
   const updatedRow = headers.map((h) => {
+    if (h === 'MODIFICADO_POR') return payload.email;
     if (updatable.includes(h) && body[h.toLowerCase()] !== undefined) {
       return String(body[h.toLowerCase()]);
     }
@@ -50,6 +51,7 @@ export async function PATCH(request, { params }) {
   const headers = rows[0];
 
   const updatedRow = headers.map((h) => {
+    if (h === 'MODIFICADO_POR') return payload.email;
     const key = h.toLowerCase();
     if (body[key] !== undefined) return String(body[key]);
     return item[h] ?? '';

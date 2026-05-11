@@ -75,6 +75,7 @@ export async function PUT(request, { params }) {
       const newEnUso = Math.max(0, parseInt(invItem.STOCK_EN_USO, 10) - item.cantidad);
       const headers = invRows[0];
       const updatedRow = headers.map((h) => {
+        if (h === 'MODIFICADO_POR') return payload.email;
         if (h === 'STOCK_DISPONIBLE') return String(newDisponible);
         if (h === 'STOCK_EN_USO') return String(newEnUso);
         return invItem[h] ?? '';
@@ -85,6 +86,7 @@ export async function PUT(request, { params }) {
     // Actualizar movimiento
     const headers = rows[0];
     const updatedMov = headers.map((h) => {
+      if (h === 'MODIFICADO_POR') return payload.email;
       if (h === 'HORA_INGRESO') return formatTime(now);
       if (h === 'ITEMS_INGRESADOS') return itemsIngStr;
       if (h === 'CANTIDADES_INGRESADAS') return itemsIngStr;
@@ -118,6 +120,7 @@ export async function PATCH(request, { params }) {
   const mov = movimientos[idx];
   const headers = rows[0];
   const updatedMov = headers.map((h) => {
+    if (h === 'MODIFICADO_POR') return payload.email;
     if (h === 'OBSERVACIONES') return observaciones || '';
     return mov[h] ?? '';
   });

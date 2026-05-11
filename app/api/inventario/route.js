@@ -55,7 +55,7 @@ export async function POST(request) {
   const total = parseInt(stock_total, 10);
   const row = [
     id, nombre, categoria, total, total, 0,
-    unidad_medida || 'unidad', descripcion || '', parseInt(stock_minimo, 10) || 1, 'TRUE',
+    unidad_medida || 'unidad', descripcion || '', parseInt(stock_minimo, 10) || 1, 'TRUE', payload.email
   ];
   await appendRow(SHEETS.INVENTARIO, row);
 

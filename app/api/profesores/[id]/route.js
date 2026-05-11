@@ -18,6 +18,7 @@ export async function PUT(request, { params }) {
   const prof = profesores[idx];
   const headers = rows[0];
   const updatedRow = headers.map((h) => {
+    if (h === 'MODIFICADO_POR') return payload.email;
     if (h === 'NOMBRE' && body.nombre !== undefined) return body.nombre;
     if (h === 'APELLIDO' && body.apellido !== undefined) return body.apellido;
     if (h === 'MATERIA_ASOCIADA' && body.materia_asociada !== undefined) return body.materia_asociada;

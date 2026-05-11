@@ -1,59 +1,78 @@
 // app/api/auth/login/route.js
 import { NextResponse } from 'next/server';
+import { OAuth2Client } from 'google-auth-library';
 import {
-  getSheetValues, rowsToObjects, appendRow, nowAR, formatDate, formatTime,
+  getSheetValues, rowsToObjects, appendRow, updateRow, nowAR, formatDate, formatTime,
   generateId, SHEETS,
 } from '@/lib/sheets';
-import { comparePassword, hashPassword, signToken } from '@/lib/auth';
+import { signToken } from '@/lib/auth';
+
+const client = new OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
 
 export async function POST(request) {
   try {
-    const { email, password } = await request.json();
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email y contraseña requeridos' }, { status: 400 });
+    const { credential } = await request.json();
+    if (!credential) {
+      return NextResponse.json({ error: 'Credencial de Google requerida' }, { status: 400 });
+    }
+
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, given_name, family_name } = payload;
+
+    if (!email.endsWith('@donorionevictoria.com.ar')) {
+      return NextResponse.json({ error: 'Solo se permiten correos @donorionevictoria.com.ar' }, { status: 403 });
     }
 
     const rows = await getSheetValues(SHEETS.USUARIOS);
-    let usuarios = rowsToObjects(rows);
+    const usuarios = rowsToObjects(rows);
+    let usuario = usuarios.find((u) => u.EMAIL?.toLowerCase() === email.toLowerCase());
 
-    // Si no hay usuarios, crear admin por defecto
-    if (usuarios.length === 0) {
-      const hash = await hashPassword('Admin1234');
-      const now = nowAR();
-      const defaultAdmin = [
-        generateId(), 'Admin', 'Sistema', 'admin@panol.com',
-        hash, 'ADMIN', 'TRUE', formatDate(now), '',
-      ];
-      await appendRow(SHEETS.USUARIOS, defaultAdmin);
-      // Recargamos
-      const rows2 = await getSheetValues(SHEETS.USUARIOS);
-      usuarios = rowsToObjects(rows2);
-    }
-
-    const usuario = usuarios.find(
-      (u) => u.EMAIL?.toLowerCase() === email.toLowerCase() && u.ACTIVO === 'TRUE'
-    );
+    const isPanolAdmin = email.toLowerCase() === 'panol@donorionevictoria.com.ar';
+    const assignedRole = isPanolAdmin ? 'ADMIN' : 'PAÑOLERO';
+    const now = nowAR();
 
     if (!usuario) {
-      return NextResponse.json({ error: 'Credenciales inválidas o usuario inactivo' }, { status: 401 });
+      // Create new user
+      usuario = {
+        ID: generateId(),
+        NOMBRE: given_name || '',
+        APELLIDO: family_name || '',
+        EMAIL: email,
+        ROL: assignedRole,
+        ACTIVO: 'TRUE',
+        FECHA_CREACION: formatDate(now),
+        ULTIMO_ACCESO: `${formatDate(now)} ${formatTime(now)}`,
+        MODIFICADO_POR: email,
+      };
+      const newRow = [
+        usuario.ID, usuario.NOMBRE, usuario.APELLIDO, usuario.EMAIL,
+        usuario.ROL, usuario.ACTIVO, usuario.FECHA_CREACION, usuario.ULTIMO_ACCESO, usuario.MODIFICADO_POR
+      ];
+      await appendRow(SHEETS.USUARIOS, newRow);
+    } else {
+      if (usuario.ACTIVO !== 'TRUE') {
+        return NextResponse.json({ error: 'Usuario inactivo' }, { status: 403 });
+      }
+      
+      // Update ULTIMO_ACCESO and enforce role
+      usuario.ROL = assignedRole;
+      usuario.ULTIMO_ACCESO = `${formatDate(now)} ${formatTime(now)}`;
+      usuario.MODIFICADO_POR = email;
+      
+      const dataIndex = usuarios.findIndex((u) => u.ID === usuario.ID);
+      const allCols = rows[0]; // headers
+      const updatedRow = allCols.map((col) => {
+        if (col === 'ROL') return assignedRole;
+        if (col === 'ULTIMO_ACCESO') return usuario.ULTIMO_ACCESO;
+        if (col === 'MODIFICADO_POR') return email;
+        return usuario[col] ?? '';
+      });
+      await updateRow(SHEETS.USUARIOS, dataIndex, updatedRow);
     }
-
-    const valid = await comparePassword(password, usuario.PASSWORD_HASH);
-    if (!valid) {
-      return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });
-    }
-
-    // Actualizar ULTIMO_ACCESO
-    const dataIndex = usuarios.findIndex((u) => u.ID === usuario.ID);
-    const now = nowAR();
-    const allCols = rows[0]; // headers
-    const updatedRow = allCols.map((col) => {
-      if (col === 'ULTIMO_ACCESO') return `${formatDate(now)} ${formatTime(now)}`;
-      return usuario[col] ?? '';
-    });
-    await import('@/lib/sheets').then(async (m) => {
-      await m.updateRow(SHEETS.USUARIOS, dataIndex, updatedRow);
-    });
 
     const token = signToken({
       id: usuario.ID,
@@ -72,10 +91,9 @@ export async function POST(request) {
         email: usuario.EMAIL,
         rol: usuario.ROL,
       },
-      defaultAdmin: usuarios.length === 1 && email === 'admin@panol.com',
     });
   } catch (err) {
     console.error('Login error:', err);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    return NextResponse.json({ error: 'Error interno del servidor o token inválido' }, { status: 500 });
   }
 }
