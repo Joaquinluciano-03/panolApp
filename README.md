@@ -4,18 +4,12 @@ Este es el sistema completo para la gestión de egresos, ingresos y control de i
 
 ## Arquitectura de la Base de Datos (Google Sheets)
 
-El sistema utiliza un documento de Google Sheets como base de datos. Debes crear un nuevo archivo de Google Sheets y crear exactamente estas 5 hojas (pestañas) con los siguientes encabezados en la **Fila 1** de cada hoja:
+El sistema utiliza un documento de Google Sheets como base de datos. ¡La buena noticia es que el sistema **creará las hojas y las columnas automáticamente** la primera vez que inicies sesión!
 
-1. **MOVIMIENTOS**
-   `ID`, `ID_PLANILLA`, `FECHA`, `HORA_EGRESO`, `ALUMNO_RESPONSABLE`, `DNI_ALUMNO`, `CURSO`, `MATERIA`, `PROFESOR`, `ITEMS_EGRESADOS`, `ESTADO`, `PAÑOLERO`, `ITEMS_INGRESADOS`, `HORA_INGRESO`, `DIFERENCIA`, `OBSERVACIONES`, `MODIFICADO_POR`
-2. **INVENTARIO**
-   `ID`, `NOMBRE`, `CATEGORIA`, `STOCK_TOTAL`, `STOCK_DISPONIBLE`, `STOCK_MINIMO`, `ACTIVO`, `MODIFICADO_POR`
-3. **USUARIOS**
-   `ID`, `NOMBRE`, `APELLIDO`, `EMAIL`, `ROL`, `ACTIVO`, `FECHA_CREACION`, `ULTIMO_ACCESO`, `MODIFICADO_POR`
-4. **MATERIAS**
-   `ID`, `NOMBRE`, `CURSO`, `ACTIVO`, `MODIFICADO_POR`
-5. **PROFESORES**
-   `ID`, `NOMBRE`, `APELLIDO`, `MATERIA_ID`, `ACTIVO`, `MODIFICADO_POR`
+Solo debes:
+1. Crear un documento de Google Sheets completamente **en blanco**.
+2. Compartirlo con el "Bot" (la cuenta de servicio) como se explica en la sección de Despliegue.
+3. El sistema se encargará de crear las 5 tablas necesarias (`MOVIMIENTOS`, `INVENTARIO`, `USUARIOS`, `MATERIAS`, `PROFESORES`) con sus respectivos encabezados.
 
 > **Nota:** El sistema requiere inicio de sesión con cuentas de Google del dominio `@donorionevictoria.com.ar`. La cuenta `panol@donorionevictoria.com.ar` obtendrá automáticamente el rol de Administrador.
 

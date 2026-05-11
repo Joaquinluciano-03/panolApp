@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 import {
   getSheetValues, rowsToObjects, appendRow, updateRow, nowAR, formatDate, formatTime,
-  generateId, SHEETS,
+  generateId, SHEETS, checkAndInitDb,
 } from '@/lib/sheets';
 import { signToken } from '@/lib/auth';
 
@@ -26,6 +26,9 @@ export async function POST(request) {
     if (!email.endsWith('@donorionevictoria.com.ar')) {
       return NextResponse.json({ error: 'Solo se permiten correos @donorionevictoria.com.ar' }, { status: 403 });
     }
+
+    // Inicializar base de datos si está vacía
+    await checkAndInitDb();
 
     const rows = await getSheetValues(SHEETS.USUARIOS);
     const usuarios = rowsToObjects(rows);
