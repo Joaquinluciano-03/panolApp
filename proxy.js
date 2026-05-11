@@ -1,4 +1,4 @@
-// middleware.js — protege rutas del dashboard
+// proxy.js — protege rutas del dashboard (Next.js 16 file convention)
 import { NextResponse } from 'next/server';
 
 export function proxy(request) {
