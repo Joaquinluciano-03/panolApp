@@ -1,26 +1,28 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@keyframes slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes scale-in {
+  from { transform: scale(0.95); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+.animate-slide-in  { animation: slide-in  0.25s ease-out; }
+.animate-scale-in  { animation: scale-in  0.2s ease-out; }
+.animate-fade-in   { animation: fade-in   0.3s ease-out; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Scrollbar personalizado */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #4B5563; }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* Tabla zebra */
+.table-zebra tbody tr:nth-child(even) { background-color: rgba(255,255,255,0.02); }
+.table-zebra tbody tr:hover { background-color: rgba(245,158,11,0.05); }
