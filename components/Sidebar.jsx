@@ -11,23 +11,23 @@ import {
 import { clsx } from '@/lib/utils';
 
 const adminNav = [
-  { href: '/dashboard',           label: 'Dashboard',      icon: LayoutDashboard },
-  { href: '/dashboard/egreso',    label: 'Nuevo Egreso',   icon: PackagePlus },
-  { href: '/dashboard/pendientes',label: 'Pendientes',     icon: Clock },
-  { href: '/dashboard/historial', label: 'Historial',      icon: History },
-  { href: '/dashboard/inventario',label: 'Inventario',     icon: Package },
-  { href: '/dashboard/maestros',  label: 'Materias/Prof.', icon: BookOpen },
-  { href: '/dashboard/usuarios',  label: 'Usuarios',       icon: Users },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/egreso', label: 'Nuevo Egreso', icon: PackagePlus },
+  { href: '/dashboard/pendientes', label: 'Pendientes', icon: Clock },
+  { href: '/dashboard/historial', label: 'Historial', icon: History },
+  { href: '/dashboard/inventario', label: 'Inventario', icon: Package },
+  { href: '/dashboard/maestros', label: 'Materias/Prof.', icon: BookOpen },
+  { href: '/dashboard/usuarios', label: 'Usuarios', icon: Users },
 ];
 
 const pañoleroNav = [
-  { href: '/dashboard',           label: 'Dashboard',      icon: LayoutDashboard },
-  { href: '/dashboard/egreso',    label: 'Nuevo Egreso',   icon: PackagePlus },
-  { href: '/dashboard/pendientes',label: 'Pendientes',     icon: Clock },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/egreso', label: 'Nuevo Egreso', icon: PackagePlus },
+  { href: '/dashboard/pendientes', label: 'Pendientes', icon: Clock },
 ];
 
 const estudianteNav = [
-  { href: '/dashboard/inventario',label: 'Stock del Pañol', icon: Package },
+  { href: '/dashboard/inventario', label: 'Stock del Pañol', icon: Package },
 ];
 
 export default function Sidebar({ collapsed, setCollapsed }) {
@@ -102,20 +102,20 @@ export default function Sidebar({ collapsed, setCollapsed }) {
               <p className="text-sm font-medium text-white truncate">
                 {user?.nombre} {user?.apellido}
               </p>
-                {user?.rol === 'ADMIN' ? 'Administrador' : (user?.rol === 'PAÑOLERO' ? 'Pañolero' : 'Estudiante')}
-              </p>
+              {user?.rol === 'ADMIN' ? 'Administrador' : (user?.rol === 'PAÑOLERO' ? 'Pañolero' : 'Estudiante')}
+            </p>
             </div>
           )}
-          <button
-            onClick={logout}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-gray-400
+        <button
+          onClick={logout}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-gray-400
               hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
-          >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && <span className="text-sm">Cerrar sesión</span>}
-          </button>
-        </div>
-      </aside>
+        >
+          <LogOut className="w-5 h-5 flex-shrink-0" />
+          {!collapsed && <span className="text-sm">Cerrar sesión</span>}
+        </button>
+      </div>
+    </aside >
     </>
   );
 }
