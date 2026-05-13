@@ -28,7 +28,7 @@ function ItemRow({ item, inventario, onChange, onRemove, index }) {
           {inventario
             .filter((i) => i.ACTIVO === 'TRUE' && parseInt(i.STOCK_DISPONIBLE) > 0)
             .map((i) => (
-              <option key={i.ID_ITEM} value={i.NOMBRE}>
+              <option key={i.ID} value={i.NOMBRE}>
                 {i.NOMBRE} ({i.STOCK_DISPONIBLE} disp.)
               </option>
             ))}

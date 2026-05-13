@@ -12,7 +12,7 @@ export async function PUT(request, { params }) {
 
   const rows = await getSheetValues(SHEETS.INVENTARIO);
   const inventario = rowsToObjects(rows);
-  const idx = inventario.findIndex((i) => i.ID_ITEM === id);
+  const idx = inventario.findIndex((i) => i.ID === id);
   if (idx === -1) return NextResponse.json({ error: 'Ítem no encontrado' }, { status: 404 });
 
   const item = inventario[idx];
@@ -44,7 +44,7 @@ export async function PATCH(request, { params }) {
 
   const rows = await getSheetValues(SHEETS.INVENTARIO);
   const inventario = rowsToObjects(rows);
-  const idx = inventario.findIndex((i) => i.ID_ITEM === id);
+  const idx = inventario.findIndex((i) => i.ID === id);
   if (idx === -1) return NextResponse.json({ error: 'Ítem no encontrado' }, { status: 404 });
 
   const item = inventario[idx];

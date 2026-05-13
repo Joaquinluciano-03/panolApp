@@ -80,7 +80,7 @@ export default function InventarioPage() {
     setSaving(true);
     try {
       if (editItem) {
-        const res = await authFetch(`/api/inventario/${editItem.ID_ITEM}`, {
+        const res = await authFetch(`/api/inventario/${editItem.ID}`, {
           method: 'PUT',
           body: JSON.stringify({
             nombre: form.nombre, categoria: form.categoria,
@@ -104,7 +104,7 @@ export default function InventarioPage() {
 
   const toggleActivo = async (item) => {
     try {
-      await authFetch(`/api/inventario/${item.ID_ITEM}`, {
+      await authFetch(`/api/inventario/${item.ID}`, {
         method: 'PATCH',
         body: JSON.stringify({ activo: item.ACTIVO !== 'TRUE' ? 'TRUE' : 'FALSE' }),
       });
@@ -199,7 +199,7 @@ export default function InventarioPage() {
                   const stockAlerta = disp <= min && disp > 0;
                   const sinStock = disp === 0;
                   return (
-                    <tr key={item.ID_ITEM} className={item.ACTIVO !== 'TRUE' ? 'opacity-50' : ''}>
+                    <tr key={item.ID} className={item.ACTIVO !== 'TRUE' ? 'opacity-50' : ''}>
                       <td className="px-5 py-3">
                         <p className="text-white font-medium">{item.NOMBRE}</p>
                         {item.DESCRIPCION && <p className="text-xs text-gray-500 truncate max-w-xs">{item.DESCRIPCION}</p>}
