@@ -10,7 +10,7 @@ import Modal from '@/components/ui/Modal';
 import Input, { Select } from '@/components/ui/Input';
 import { Users, Plus, Pencil, ShieldCheck, Wrench } from 'lucide-react';
 
-const EMPTY_FORM = { nombre: '', apellido: '', email: '', rol: 'PAÑOLERO' };
+const EMPTY_FORM = { nombre: '', apellido: '', email: '', rol: 'ESTUDIANTE' };
 
 export default function UsuariosPage() {
   const { authFetch, user } = useAuth();
@@ -125,10 +125,12 @@ export default function UsuariosPage() {
                     </td>
                     <td className="px-5 py-3 text-gray-300">{u.EMAIL}</td>
                     <td className="px-5 py-3 text-center">
-                      <Badge variant={u.ROL === 'ADMIN' ? 'admin' : 'pañolero'}>
+                      <Badge variant={u.ROL?.toLowerCase() || 'estudiante'}>
                         {u.ROL === 'ADMIN'
                           ? <><ShieldCheck className="w-3 h-3 inline mr-1" />Admin</>
-                          : <><Wrench className="w-3 h-3 inline mr-1" />Pañolero</>}
+                          : u.ROL === 'PAÑOLERO'
+                          ? <><Wrench className="w-3 h-3 inline mr-1" />Pañolero</>
+                          : <><Users className="w-3 h-3 inline mr-1" />Estudiante</>}
                       </Badge>
                     </td>
                     <td className="px-5 py-3 text-center">
@@ -174,6 +176,7 @@ export default function UsuariosPage() {
           </div>
           <Input label="Email *" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           <Select label="Rol *" value={form.rol} onChange={(e) => setForm({ ...form, rol: e.target.value })}>
+            <option value="ESTUDIANTE">Estudiante</option>
             <option value="PAÑOLERO">Pañolero</option>
             <option value="ADMIN">Administrador</option>
           </Select>

@@ -47,9 +47,7 @@ export default function InventarioPage() {
   const [q, setQ]                   = useState('');
   const [catFiltro, setCatFiltro]   = useState('');
 
-  useEffect(() => {
-    if (user && user.rol !== 'ADMIN') router.push('/dashboard');
-  }, [user, router]);
+  // Permitimos que estudiantes y pañoleros vean el stock, pero solo ADMIN puede editar
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -135,7 +133,9 @@ export default function InventarioPage() {
           </h1>
           <p className="text-gray-400 text-sm mt-0.5">{inventario.length} ítems registrados</p>
         </div>
-        <Button onClick={openCreate}><Plus className="w-4 h-4" /> Agregar ítem</Button>
+        {user?.rol === 'ADMIN' && (
+          <Button onClick={openCreate}><Plus className="w-4 h-4" /> Agregar ítem</Button>
+        )}
       </div>
 
       {stockBajo.length > 0 && (
@@ -188,7 +188,7 @@ export default function InventarioPage() {
                   <th className="px-5 py-3 text-left">Unidad</th>
                   <th className="px-5 py-3 text-center">Mínimo</th>
                   <th className="px-5 py-3 text-center">Estado</th>
-                  <th className="px-5 py-3 text-center">Acciones</th>
+                  {user?.rol === 'ADMIN' && <th className="px-5 py-3 text-center">Acciones</th>}
                 </tr>
               </thead>
               <tbody>
@@ -223,20 +223,22 @@ export default function InventarioPage() {
                           ? <Badge variant="activo">Activo</Badge>
                           : <Badge variant="inactivo">Inactivo</Badge>}
                       </td>
-                      <td className="px-5 py-3 text-center">
-                        <div className="flex gap-2 justify-center">
-                          <Button variant="ghost" size="xs" onClick={() => openEdit(item)}>
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant={item.ACTIVO === 'TRUE' ? 'ghost' : 'outline'}
-                            size="xs"
-                            onClick={() => toggleActivo(item)}
-                          >
-                            {item.ACTIVO === 'TRUE' ? 'Desactivar' : 'Activar'}
-                          </Button>
-                        </div>
-                      </td>
+                      {user?.rol === 'ADMIN' && (
+                        <td className="px-5 py-3 text-center">
+                          <div className="flex gap-2 justify-center">
+                            <Button variant="ghost" size="xs" onClick={() => openEdit(item)}>
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant={item.ACTIVO === 'TRUE' ? 'ghost' : 'outline'}
+                              size="xs"
+                              onClick={() => toggleActivo(item)}
+                            >
+                              {item.ACTIVO === 'TRUE' ? 'Desactivar' : 'Activar'}
+                            </Button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

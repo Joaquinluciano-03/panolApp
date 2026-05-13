@@ -35,7 +35,7 @@ export async function POST(request) {
     let usuario = usuarios.find((u) => u.EMAIL?.toLowerCase() === email.toLowerCase());
 
     const isPanolAdmin = email.toLowerCase() === 'panol@donorionevictoria.com.ar';
-    const assignedRole = isPanolAdmin ? 'ADMIN' : 'PAÑOLERO';
+    const assignedRole = isPanolAdmin ? 'ADMIN' : (usuario ? usuario.ROL : 'ESTUDIANTE');
     const now = nowAR();
 
     if (!usuario) {

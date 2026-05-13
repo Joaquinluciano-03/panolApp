@@ -26,10 +26,14 @@ const pañoleroNav = [
   { href: '/dashboard/pendientes',label: 'Pendientes',     icon: Clock },
 ];
 
+const estudianteNav = [
+  { href: '/dashboard/inventario',label: 'Stock del Pañol', icon: Package },
+];
+
 export default function Sidebar({ collapsed, setCollapsed }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
-  const nav = user?.rol === 'ADMIN' ? adminNav : pañoleroNav;
+  const nav = user?.rol === 'ADMIN' ? adminNav : (user?.rol === 'PAÑOLERO' ? pañoleroNav : estudianteNav);
 
   return (
     <>
@@ -98,8 +102,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
               <p className="text-sm font-medium text-white truncate">
                 {user?.nombre} {user?.apellido}
               </p>
-              <p className="text-xs text-gray-500 truncate">
-                {user?.rol === 'ADMIN' ? 'Administrador' : 'Pañolero'}
+                {user?.rol === 'ADMIN' ? 'Administrador' : (user?.rol === 'PAÑOLERO' ? 'Pañolero' : 'Estudiante')}
               </p>
             </div>
           )}

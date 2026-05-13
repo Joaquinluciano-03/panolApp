@@ -7,6 +7,7 @@ export default function Badge({ children, variant = 'default' }) {
     incompleto: 'bg-red-500/20 text-red-300 border border-red-500/30',
     admin:      'bg-purple-500/20 text-purple-300 border border-purple-500/30',
     pañolero:   'bg-blue-500/20 text-blue-300 border border-blue-500/30',
+    estudiante: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
     activo:     'bg-green-500/20 text-green-300 border border-green-500/30',
     inactivo:   'bg-gray-500/20 text-gray-400 border border-gray-500/30',
     alerta:     'bg-red-500/20 text-red-300 border border-red-500/30',

@@ -41,7 +41,14 @@ function StatCard({ title, value, subtitle, icon: Icon, color = 'amber' }) {
 export default function DashboardPage() {
   const { user, authFetch } = useAuth();
   const toast = useToast();
+  const router = require('next/navigation').useRouter();
   const isAdmin = user?.rol === 'ADMIN';
+
+  useEffect(() => {
+    if (user?.rol === 'ESTUDIANTE') {
+      router.replace('/dashboard/inventario');
+    }
+  }, [user, router]);
 
   const [movimientos, setMovimientos]   = useState([]);
   const [inventario, setInventario]     = useState([]);
