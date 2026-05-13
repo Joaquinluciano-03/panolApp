@@ -50,7 +50,7 @@ export default function MaestrosPage() {
 
   // ── Materias ──────────────────────────────────────────────────────────────
   const openCreateMat = () => { setEditMat(null); setMatForm({ nombre: '' }); setMatModal(true); };
-  const openEditMat = (m) => { setEditMat(m); setMatForm({ nombre: m.NOMBRE_MATERIA }); setMatModal(true); };
+  const openEditMat = (m) => { setEditMat(m); setMatForm({ nombre: m.NOMBRE }); setMatModal(true); };
 
   const saveMat = async () => {
     if (!matForm.nombre) { toast('Nombre requerido', 'warning'); return; }
@@ -70,7 +70,7 @@ export default function MaestrosPage() {
   };
 
   const toggleMat = async (m) => {
-    await authFetch(`/api/materias/${m.ID}`, { method: 'PUT', body: JSON.stringify({ nombre: m.NOMBRE_MATERIA, activo: m.ACTIVO !== 'TRUE' }) });
+    await authFetch(`/api/materias/${m.ID}`, { method: 'PUT', body: JSON.stringify({ nombre: m.NOMBRE, activo: m.ACTIVO !== 'TRUE' }) });
     toast('Estado actualizado', 'info');
     fetchAll();
   };
@@ -137,7 +137,7 @@ export default function MaestrosPage() {
                 <tbody>
                   {materias.map((m) => (
                     <tr key={m.ID}>
-                      <td className="px-4 py-3 text-white font-medium">{m.NOMBRE_MATERIA}</td>
+                      <td className="px-4 py-3 text-white font-medium">{m.NOMBRE}</td>
                       <td className="px-4 py-3 text-center">
                         <Badge variant={m.ACTIVO === 'TRUE' ? 'activo' : 'inactivo'}>
                           {m.ACTIVO === 'TRUE' ? 'Activa' : 'Inactiva'}
@@ -222,7 +222,7 @@ export default function MaestrosPage() {
           </div>
           <Select label="Materia asociada" value={profForm.materia_asociada} onChange={(e) => setProfForm({ ...profForm, materia_asociada: e.target.value })}>
             <option value="">Sin asignar</option>
-            {materias.map((m) => <option key={m.ID} value={m.NOMBRE_MATERIA}>{m.NOMBRE_MATERIA}</option>)}
+            {materias.map((m) => <option key={m.ID} value={m.NOMBRE}>{m.NOMBRE}</option>)}
           </Select>
         </div>
         <div className="flex gap-3 mt-4">
