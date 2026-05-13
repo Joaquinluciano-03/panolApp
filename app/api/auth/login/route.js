@@ -97,6 +97,6 @@ export async function POST(request) {
     });
   } catch (err) {
     console.error('Login error:', err);
-    return NextResponse.json({ error: 'Error interno del servidor o token inválido' }, { status: 500 });
+    return NextResponse.json({ error: 'Error del servidor: ' + (err.message || 'Desconocido') }, { status: 500 });
   }
 }
