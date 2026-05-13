@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 import {
   getSheetValues, rowsToObjects, appendRow, updateRow, nowAR, formatDate, formatTime,
-  generateId, SHEETS, checkAndInitDb,
+  generateId, SHEETS, checkAndInitDb, cleanOldMovimientos,
 } from '@/lib/sheets';
 import { signToken } from '@/lib/auth';
 
@@ -29,6 +29,9 @@ export async function POST(request) {
 
     // Inicializar base de datos si está vacía
     await checkAndInitDb();
+    
+    // Limpieza automática de registros antiguos en segundo plano
+    cleanOldMovimientos().catch(err => console.error('Error al limpiar db:', err));
 
     const rows = await getSheetValues(SHEETS.USUARIOS);
     const usuarios = rowsToObjects(rows);
