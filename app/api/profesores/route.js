@@ -12,7 +12,7 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url);
   const materia = searchParams.get('materia');
-  if (materia) profesores = profesores.filter((p) => p.MATERIA_ASOCIADA === materia);
+  if (materia) profesores = profesores.filter((p) => p.MATERIA_ID && p.MATERIA_ID.split(', ').includes(materia));
 
   return NextResponse.json({ profesores });
 }
@@ -21,10 +21,10 @@ export async function POST(request) {
   const payload = requireAdmin(request);
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-  const { nombre, apellido, materia_asociada } = await request.json();
+  const { nombre, apellido, materias } = await request.json();
   if (!nombre || !apellido) {
     return NextResponse.json({ error: 'Nombre y apellido requeridos' }, { status: 400 });
   }
-  await appendRow(SHEETS.PROFESORES, [generateId(), nombre, apellido, materia_asociada || '', 'TRUE', payload.email]);
+  await appendRow(SHEETS.PROFESORES, [generateId(), nombre, apellido, materias || '', 'TRUE', payload.email]);
   return NextResponse.json({ success: true }, { status: 201 });
 }

@@ -20,6 +20,7 @@ export async function PUT(request, { params }) {
   const updatedRow = headers.map((h) => {
     if (h === 'MODIFICADO_POR') return payload.email;
     if (h === 'NOMBRE' && body.nombre !== undefined) return body.nombre;
+    if (h === 'CURSO' && body.curso !== undefined) return body.curso;
     if (h === 'ACTIVO' && body.activo !== undefined) return body.activo ? 'TRUE' : 'FALSE';
     return materia[h] ?? '';
   });

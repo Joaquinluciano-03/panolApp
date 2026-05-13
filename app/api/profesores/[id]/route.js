@@ -21,7 +21,7 @@ export async function PUT(request, { params }) {
     if (h === 'MODIFICADO_POR') return payload.email;
     if (h === 'NOMBRE' && body.nombre !== undefined) return body.nombre;
     if (h === 'APELLIDO' && body.apellido !== undefined) return body.apellido;
-    if (h === 'MATERIA_ASOCIADA' && body.materia_asociada !== undefined) return body.materia_asociada;
+    if (h === 'MATERIA_ID' && body.materias !== undefined) return body.materias;
     if (h === 'ACTIVO' && body.activo !== undefined) return body.activo ? 'TRUE' : 'FALSE';
     return prof[h] ?? '';
   });

@@ -14,8 +14,8 @@ export async function GET(request) {
 export async function POST(request) {
   const payload = requireAdmin(request);
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  const { nombre } = await request.json();
+  const { nombre, curso } = await request.json();
   if (!nombre) return NextResponse.json({ error: 'Nombre requerido' }, { status: 400 });
-  await appendRow(SHEETS.MATERIAS, [generateId(), nombre, '', 'TRUE', payload.email]);
+  await appendRow(SHEETS.MATERIAS, [generateId(), nombre, curso || '', 'TRUE', payload.email]);
   return NextResponse.json({ success: true }, { status: 201 });
 }

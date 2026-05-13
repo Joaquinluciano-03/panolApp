@@ -216,7 +216,7 @@ export default function EgresoPage() {
             >
               <option value="">Seleccionar materia…</option>
               {materias.map((m) => (
-                <option key={m.ID} value={m.NOMBRE}>{m.NOMBRE}</option>
+                <option key={m.ID} value={m.NOMBRE}>{m.NOMBRE} {m.CURSO ? `(${m.CURSO})` : ''}</option>
               ))}
             </Select>
 

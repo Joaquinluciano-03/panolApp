@@ -24,8 +24,8 @@ export default function MaestrosPage() {
   const [profModal, setProfModal] = useState(false);
   const [editMat, setEditMat]     = useState(null);
   const [editProf, setEditProf]   = useState(null);
-  const [matForm, setMatForm]     = useState({ nombre: '' });
-  const [profForm, setProfForm]   = useState({ nombre: '', apellido: '', materia_asociada: '' });
+  const [matForm, setMatForm]     = useState({ nombre: '', curso: '' });
+  const [profForm, setProfForm]   = useState({ nombre: '', apellido: '', materias: [] });
   const [saving, setSaving]       = useState(false);
 
   useEffect(() => { if (user && user.rol !== 'ADMIN') router.push('/dashboard'); }, [user, router]);
@@ -49,18 +49,18 @@ export default function MaestrosPage() {
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   // ── Materias ──────────────────────────────────────────────────────────────
-  const openCreateMat = () => { setEditMat(null); setMatForm({ nombre: '' }); setMatModal(true); };
-  const openEditMat = (m) => { setEditMat(m); setMatForm({ nombre: m.NOMBRE }); setMatModal(true); };
+  const openCreateMat = () => { setEditMat(null); setMatForm({ nombre: '', curso: '' }); setMatModal(true); };
+  const openEditMat = (m) => { setEditMat(m); setMatForm({ nombre: m.NOMBRE, curso: m.CURSO }); setMatModal(true); };
 
   const saveMat = async () => {
     if (!matForm.nombre) { toast('Nombre requerido', 'warning'); return; }
     setSaving(true);
     try {
       if (editMat) {
-        await authFetch(`/api/materias/${editMat.ID}`, { method: 'PUT', body: JSON.stringify({ nombre: matForm.nombre }) });
+        await authFetch(`/api/materias/${editMat.ID}`, { method: 'PUT', body: JSON.stringify({ nombre: matForm.nombre, curso: matForm.curso }) });
         toast('Materia actualizada', 'success');
       } else {
-        await authFetch('/api/materias', { method: 'POST', body: JSON.stringify({ nombre: matForm.nombre }) });
+        await authFetch('/api/materias', { method: 'POST', body: JSON.stringify({ nombre: matForm.nombre, curso: matForm.curso }) });
         toast('Materia creada', 'success');
       }
       setMatModal(false);
@@ -70,16 +70,16 @@ export default function MaestrosPage() {
   };
 
   const toggleMat = async (m) => {
-    await authFetch(`/api/materias/${m.ID}`, { method: 'PUT', body: JSON.stringify({ nombre: m.NOMBRE, activo: m.ACTIVO !== 'TRUE' }) });
+    await authFetch(`/api/materias/${m.ID}`, { method: 'PUT', body: JSON.stringify({ nombre: m.NOMBRE, curso: m.CURSO, activo: m.ACTIVO !== 'TRUE' }) });
     toast('Estado actualizado', 'info');
     fetchAll();
   };
 
   // ── Profesores ────────────────────────────────────────────────────────────
-  const openCreateProf = () => { setEditProf(null); setProfForm({ nombre: '', apellido: '', materia_asociada: '' }); setProfModal(true); };
+  const openCreateProf = () => { setEditProf(null); setProfForm({ nombre: '', apellido: '', materias: [] }); setProfModal(true); };
   const openEditProf = (p) => {
     setEditProf(p);
-    setProfForm({ nombre: p.NOMBRE, apellido: p.APELLIDO, materia_asociada: p.MATERIA_ASOCIADA });
+    setProfForm({ nombre: p.NOMBRE, apellido: p.APELLIDO, materias: p.MATERIA_ID ? p.MATERIA_ID.split(', ') : [] });
     setProfModal(true);
   };
 
@@ -88,10 +88,10 @@ export default function MaestrosPage() {
     setSaving(true);
     try {
       if (editProf) {
-        await authFetch(`/api/profesores/${editProf.ID}`, { method: 'PUT', body: JSON.stringify(profForm) });
+        await authFetch(`/api/profesores/${editProf.ID}`, { method: 'PUT', body: JSON.stringify({ ...profForm, materias: profForm.materias.join(', ') }) });
         toast('Profesor actualizado', 'success');
       } else {
-        await authFetch('/api/profesores', { method: 'POST', body: JSON.stringify(profForm) });
+        await authFetch('/api/profesores', { method: 'POST', body: JSON.stringify({ ...profForm, materias: profForm.materias.join(', ') }) });
         toast('Profesor creado', 'success');
       }
       setProfModal(false);
@@ -101,7 +101,7 @@ export default function MaestrosPage() {
   };
 
   const toggleProf = async (p) => {
-    await authFetch(`/api/profesores/${p.ID}`, { method: 'PUT', body: JSON.stringify({ nombre: p.NOMBRE, apellido: p.APELLIDO, materia_asociada: p.MATERIA_ASOCIADA, activo: p.ACTIVO !== 'TRUE' }) });
+    await authFetch(`/api/profesores/${p.ID}`, { method: 'PUT', body: JSON.stringify({ nombre: p.NOMBRE, apellido: p.APELLIDO, materias: p.MATERIA_ID, activo: p.ACTIVO !== 'TRUE' }) });
     toast('Estado actualizado', 'info');
     fetchAll();
   };
@@ -130,6 +130,7 @@ export default function MaestrosPage() {
                 <thead>
                   <tr className="text-xs text-gray-500 uppercase border-b border-gray-800/50">
                     <th className="px-4 py-3 text-left">Nombre</th>
+                    <th className="px-4 py-3 text-left">Curso</th>
                     <th className="px-4 py-3 text-center">Estado</th>
                     <th className="px-4 py-3 text-center">Acciones</th>
                   </tr>
@@ -138,6 +139,7 @@ export default function MaestrosPage() {
                   {materias.map((m) => (
                     <tr key={m.ID}>
                       <td className="px-4 py-3 text-white font-medium">{m.NOMBRE}</td>
+                      <td className="px-4 py-3 text-gray-400 text-xs">{m.CURSO || '—'}</td>
                       <td className="px-4 py-3 text-center">
                         <Badge variant={m.ACTIVO === 'TRUE' ? 'activo' : 'inactivo'}>
                           {m.ACTIVO === 'TRUE' ? 'Activa' : 'Inactiva'}
@@ -186,7 +188,7 @@ export default function MaestrosPage() {
                   {profesores.map((p) => (
                     <tr key={p.ID}>
                       <td className="px-4 py-3 text-white font-medium">{p.NOMBRE} {p.APELLIDO}</td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">{p.MATERIA_ASOCIADA || '—'}</td>
+                      <td className="px-4 py-3 text-gray-400 text-xs">{p.MATERIA_ID || '—'}</td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex gap-2 justify-center">
                           <Button variant="ghost" size="xs" onClick={() => openEditProf(p)}><Pencil className="w-3.5 h-3.5" /></Button>
@@ -206,7 +208,10 @@ export default function MaestrosPage() {
 
       {/* Modal Materia */}
       <Modal open={matModal} onClose={() => setMatModal(false)} title={editMat ? 'Editar materia' : 'Nueva materia'} size="sm">
-        <Input label="Nombre de la materia *" value={matForm.nombre} onChange={(e) => setMatForm({ nombre: e.target.value })} placeholder="Ej: Tecnología de la Madera" />
+        <div className="space-y-3">
+          <Input label="Nombre de la materia *" value={matForm.nombre} onChange={(e) => setMatForm({ ...matForm, nombre: e.target.value })} placeholder="Ej: Tecnología de la Madera" />
+          <Input label="Curso" value={matForm.curso} onChange={(e) => setMatForm({ ...matForm, curso: e.target.value })} placeholder="Ej: 4to 1ra" />
+        </div>
         <div className="flex gap-3 mt-4">
           <Button variant="secondary" onClick={() => setMatModal(false)} className="flex-1">Cancelar</Button>
           <Button onClick={saveMat} loading={saving} className="flex-1">{editMat ? 'Guardar' : 'Crear'}</Button>
@@ -220,10 +225,24 @@ export default function MaestrosPage() {
             <Input label="Nombre *" value={profForm.nombre} onChange={(e) => setProfForm({ ...profForm, nombre: e.target.value })} />
             <Input label="Apellido *" value={profForm.apellido} onChange={(e) => setProfForm({ ...profForm, apellido: e.target.value })} />
           </div>
-          <Select label="Materia asociada" value={profForm.materia_asociada} onChange={(e) => setProfForm({ ...profForm, materia_asociada: e.target.value })}>
-            <option value="">Sin asignar</option>
-            {materias.map((m) => <option key={m.ID} value={m.NOMBRE}>{m.NOMBRE}</option>)}
-          </Select>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-400">Materias asociadas</label>
+            <div className="max-h-40 overflow-y-auto bg-gray-900 border border-gray-700 rounded-xl p-3 space-y-2">
+              {materias.map((m) => (
+                <label key={m.ID} className="flex items-center gap-2 text-sm text-gray-300">
+                  <input type="checkbox"
+                    checked={profForm.materias.includes(m.NOMBRE)}
+                    onChange={(e) => {
+                      if (e.target.checked) setProfForm({ ...profForm, materias: [...profForm.materias, m.NOMBRE] });
+                      else setProfForm({ ...profForm, materias: profForm.materias.filter(x => x !== m.NOMBRE) });
+                    }}
+                    className="rounded border-gray-700 bg-gray-800 text-amber-500 focus:ring-amber-500"
+                  />
+                  {m.NOMBRE} {m.CURSO ? `(${m.CURSO})` : ''}
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="flex gap-3 mt-4">
           <Button variant="secondary" onClick={() => setProfModal(false)} className="flex-1">Cancelar</Button>
