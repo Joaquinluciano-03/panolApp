@@ -72,9 +72,9 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
-    const { materia, profesor, alumno, dni, curso, items, observaciones } = body;
+    const { materia, profesor, alumno, curso, items, observaciones } = body;
 
-    if (!materia || !profesor || !alumno || !dni || !curso || !items?.length) {
+    if (!materia || !profesor || !alumno || !curso || !items?.length) {
       return NextResponse.json({ error: 'Campos obligatorios faltantes' }, { status: 400 });
     }
 
@@ -124,7 +124,7 @@ export async function POST(request) {
       materia,
       profesor,
       alumno,
-      dni,
+      '', // DNI_ALUMNO ahora va vacío
       curso,
       itemsStr,        // ITEMS_EGRESADOS
       cantidadesStr,   // CANTIDADES_EGRESADAS

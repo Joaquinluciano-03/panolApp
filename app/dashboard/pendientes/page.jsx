@@ -111,7 +111,6 @@ export default function PendientesPage() {
                 <tr className="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-800/50">
                   <th className="px-6 py-3 text-left">Planilla</th>
                   <th className="px-6 py-3 text-left">Alumno</th>
-                  <th className="px-6 py-3 text-left">DNI</th>
                   <th className="px-6 py-3 text-left">Materia / Profesor</th>
                   <th className="px-6 py-3 text-left">Ítems egresados</th>
                   <th className="px-6 py-3 text-left">Hora egreso</th>
@@ -130,7 +129,6 @@ export default function PendientesPage() {
                         <p className="text-white font-medium">{m.ALUMNO_RESPONSABLE}</p>
                         <p className="text-xs text-gray-500">{m.CURSO}</p>
                       </td>
-                      <td className="px-6 py-4 text-gray-400 font-mono text-xs">{m.DNI_ALUMNO}</td>
                       <td className="px-6 py-4">
                         <p className="text-gray-200">{m.MATERIA}</p>
                         <p className="text-xs text-gray-500">{m.PROFESOR}</p>

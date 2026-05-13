@@ -19,7 +19,7 @@ function MovimientoModal({ mov, onClose }) {
         {[
           ['ID', mov.ID], ['Planilla', mov.ID_PLANILLA], ['Fecha', mov.FECHA],
           ['Hora egreso', mov.HORA_EGRESO], ['Hora ingreso', mov.HORA_INGRESO || '—'],
-          ['Estado', mov.ESTADO], ['Alumno', mov.ALUMNO_RESPONSABLE], ['DNI', mov.DNI_ALUMNO],
+          ['Estado', mov.ESTADO], ['Alumno', mov.ALUMNO_RESPONSABLE],
           ['Curso', mov.CURSO], ['Materia', mov.MATERIA], ['Profesor', mov.PROFESOR],
           ['Pañolero', mov.PAÑOLERO],
         ].map(([k, v]) => (
@@ -243,7 +243,7 @@ export default function HistorialPage() {
                       </td>
                       <td className="px-5 py-3">
                         <p className="text-white font-medium">{m.ALUMNO_RESPONSABLE}</p>
-                        <p className="text-xs text-gray-500">{m.CURSO} — DNI {m.DNI_ALUMNO}</p>
+                        <p className="text-xs text-gray-500">{m.CURSO}</p>
                       </td>
                       <td className="px-5 py-3 text-gray-300">{m.MATERIA}</td>
                       <td className="px-5 py-3 text-gray-300">{m.PROFESOR}</td>

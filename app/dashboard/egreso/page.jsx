@@ -85,7 +85,7 @@ export default function EgresoPage() {
   const [submitted, setSubmitted] = useState(null);
 
   const [form, setForm] = useState({
-    materia: '', profesor: '', alumno: '', dni: '', curso: '', observaciones: '',
+    materia: '', profesor: '', alumno: '', curso: '', observaciones: '',
   });
   const [items, setItems] = useState([{ nombre: '', cantidad: 1 }]);
 
@@ -145,7 +145,7 @@ export default function EgresoPage() {
   };
 
   const resetForm = () => {
-    setForm({ materia: '', profesor: '', alumno: '', dni: '', curso: '', observaciones: '' });
+    setForm({ materia: '', profesor: '', alumno: '', curso: '', observaciones: '' });
     setItems([{ nombre: '', cantidad: 1 }]);
     setSubmitted(null);
   };
@@ -248,16 +248,7 @@ export default function EgresoPage() {
             placeholder="Apellido, Nombre"
             required
           />
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="DNI *"
-              type="text"
-              value={form.dni}
-              onChange={(e) => setForm({ ...form, dni: e.target.value.replace(/\D/g, '') })}
-              placeholder="12345678"
-              maxLength={8}
-              required
-            />
+          <div className="grid grid-cols-1 gap-4">
             <Input
               label="Curso *"
               value={form.curso}

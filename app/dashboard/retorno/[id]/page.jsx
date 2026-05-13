@@ -148,7 +148,6 @@ export default function RetornoPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
           {[
             ['Alumno', movimiento.ALUMNO_RESPONSABLE],
-            ['DNI', movimiento.DNI_ALUMNO],
             ['Curso', movimiento.CURSO],
             ['Materia', movimiento.MATERIA],
             ['Profesor', movimiento.PROFESOR],
