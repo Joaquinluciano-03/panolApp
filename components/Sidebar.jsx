@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard, PackagePlus, Clock, History,
   Package, BookOpen, Users, LogOut, ChevronLeft,
-  Wrench, Menu,
+  Wrench, Menu, FileBarChart
 } from 'lucide-react';
 import { clsx } from '@/lib/utils';
 
@@ -17,6 +17,7 @@ const adminNav = [
   { href: '/dashboard/historial', label: 'Historial',      icon: History },
   { href: '/dashboard/inventario',label: 'Inventario',     icon: Package },
   { href: '/dashboard/maestros',  label: 'Materias/Prof.', icon: BookOpen },
+  { href: '/dashboard/reportes',  label: 'Reportes',       icon: FileBarChart },
   { href: '/dashboard/usuarios',  label: 'Usuarios',       icon: Users },
 ];
 
