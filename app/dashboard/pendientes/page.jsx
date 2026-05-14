@@ -46,7 +46,7 @@ export default function PendientesPage() {
     );
   });
 
-  const vencidos = filtered.filter((m) => minutosTranscurridos(m.FECHA, m.HORA_EGRESO) > 180);
+  const vencidos = filtered.filter((m) => minutosTranscurridos(m.FECHA, m.HORA_EGRESO) > 90);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
@@ -70,7 +70,7 @@ export default function PendientesPage() {
           <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-red-300">
-              {vencidos.length} planilla{vencidos.length > 1 ? 's' : ''} supera{vencidos.length === 1 ? '' : 'n'} las 3 horas sin retorno
+              {vencidos.length} planilla{vencidos.length > 1 ? 's' : ''} supera{vencidos.length === 1 ? '' : 'n'} 1h 30min sin retorno
             </p>
             <p className="text-xs text-red-400/70 mt-0.5">
               {vencidos.map((m) => m.ALUMNO_RESPONSABLE).join(', ')}
@@ -121,7 +121,7 @@ export default function PendientesPage() {
               <tbody>
                 {filtered.map((m) => {
                   const mins = minutosTranscurridos(m.FECHA, m.HORA_EGRESO);
-                  const vencido = mins > 180;
+                  const vencido = mins > 90;
                   return (
                     <tr key={m.ID} className={vencido ? 'bg-red-500/5 border-l-2 border-l-red-500' : ''}>
                       <td className="px-6 py-4 font-mono text-xs text-gray-400">{m.ID_PLANILLA}</td>
