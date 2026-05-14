@@ -114,28 +114,24 @@ export async function POST(request) {
     const idPlanilla = `P-${Date.now().toString(36).toUpperCase()}`;
 
     const itemsStr = serializeItems(items);
-    const cantidadesStr = items.map((i) => `${i.nombre}:${i.cantidad}`).join(',');
 
     const row = [
-      id,
-      formatDate(now),
-      formatTime(now),
-      '', // HORA_INGRESO (vacío)
-      materia,
-      profesor,
-      alumno,
-      '', // DNI_ALUMNO ahora va vacío
-      curso,
-      itemsStr,        // ITEMS_EGRESADOS
-      cantidadesStr,   // CANTIDADES_EGRESADAS
-      '',              // ITEMS_INGRESADOS
-      '',              // CANTIDADES_INGRESADAS
-      '',              // DIFERENCIA
-      'PENDIENTE',     // ESTADO
-      observaciones || '',
-      payload.nombre + ' ' + payload.apellido, // PAÑOLERO
-      idPlanilla,
-      payload.email,
+      id,                                      // 0: ID
+      idPlanilla,                              // 1: ID_PLANILLA
+      formatDate(now),                         // 2: FECHA
+      formatTime(now),                         // 3: HORA_EGRESO
+      alumno,                                  // 4: ALUMNO_RESPONSABLE
+      curso,                                   // 5: CURSO
+      materia,                                 // 6: MATERIA
+      profesor,                                // 7: PROFESOR
+      itemsStr,                                // 8: ITEMS_EGRESADOS
+      'PENDIENTE',                             // 9: ESTADO
+      payload.nombre + ' ' + payload.apellido, // 10: PAÑOLERO
+      '',                                      // 11: ITEMS_INGRESADOS
+      '',                                      // 12: HORA_INGRESO
+      '',                                      // 13: DIFERENCIA
+      observaciones || '',                     // 14: OBSERVACIONES
+      payload.email,                           // 15: MODIFICADO_POR
     ];
 
     await appendRow(SHEETS.MOVIMIENTOS, row);

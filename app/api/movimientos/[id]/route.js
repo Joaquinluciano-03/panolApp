@@ -89,7 +89,6 @@ export async function PUT(request, { params }) {
       if (h === 'MODIFICADO_POR') return payload.email;
       if (h === 'HORA_INGRESO') return formatTime(now);
       if (h === 'ITEMS_INGRESADOS') return itemsIngStr;
-      if (h === 'CANTIDADES_INGRESADAS') return itemsIngStr;
       if (h === 'DIFERENCIA') return diferencia;
       if (h === 'ESTADO') return estado;
       if (h === 'OBSERVACIONES') return observaciones || mov.OBSERVACIONES || '';

@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
-import { Menu } from 'lucide-react';
+import { Menu, Clock, LogOut } from 'lucide-react';
 
 export default function DashboardLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -21,6 +21,37 @@ export default function DashboardLayout({ children }) {
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
           <p className="text-gray-400 text-sm">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Estudiantes/alumnos ven pantalla de espera
+  if (user.rol === 'ESTUDIANTE' || user.rol === 'ALUMNO') {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-gray-900 border border-gray-800/50 rounded-3xl p-10 text-center shadow-2xl">
+          <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Clock className="w-10 h-10 text-amber-400 animate-pulse" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-3">Cuenta pendiente</h1>
+          <p className="text-gray-400 leading-relaxed mb-2">
+            Tu cuenta fue registrada correctamente.
+          </p>
+          <p className="text-gray-400 leading-relaxed mb-8">
+            <span className="text-amber-300 font-medium">Esperá a ser habilitado por un administrador</span> para acceder al sistema.
+          </p>
+          <div className="bg-gray-800/50 rounded-2xl p-4 mb-8 text-left space-y-2">
+            <p className="text-xs text-gray-500 uppercase tracking-wider">Tu cuenta</p>
+            <p className="text-white font-medium">{user.nombre} {user.apellido}</p>
+            <p className="text-gray-400 text-sm">{user.email}</p>
+          </div>
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 mx-auto px-6 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl transition-all text-sm font-medium"
+          >
+            <LogOut className="w-4 h-4" /> Cerrar sesión
+          </button>
         </div>
       </div>
     );

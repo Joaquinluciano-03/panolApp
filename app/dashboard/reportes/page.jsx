@@ -1,10 +1,12 @@
 'use client';
 // app/dashboard/reportes/page.jsx
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
-import { FileBarChart, Download, Printer, Filter } from 'lucide-react';
+import { FileBarChart, Download, Filter, Calendar } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import { parseItems } from '@/lib/utils';
+import * as XLSX from 'xlsx';
 
 const REPORT_TYPES = {
   PENDIENTES: 'Pendientes de devolución',
@@ -12,6 +14,15 @@ const REPORT_TYPES = {
   MOVIMIENTOS: 'Historial completo de movimientos',
   INVENTARIO: 'Estado general del inventario',
   MAS_USADOS: 'Ítems más utilizados',
+};
+
+// Colores de cabecera por tipo de reporte
+const HEADER_COLORS = {
+  PENDIENTES: 'FFD97D', // amber
+  FALTANTES:  'FF6B6B', // red
+  MOVIMIENTOS:'4ECDC4', // teal
+  INVENTARIO: '95D5B2', // green
+  MAS_USADOS: 'C3B1E1', // purple
 };
 
 export default function ReportesPage() {
@@ -23,6 +34,10 @@ export default function ReportesPage() {
   const [loading, setLoading]         = useState(true);
   const [reportType, setReportType]   = useState('PENDIENTES');
 
+  // Filtros para movimientos
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
+
   // Prevent non-admins from viewing
   if (user && user.rol !== 'ADMIN') {
     return <div className="p-8 text-center text-red-400">Acceso denegado.</div>;
@@ -31,8 +46,12 @@ export default function ReportesPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      const params = new URLSearchParams();
+      if (fechaDesde) params.set('fecha_desde', fechaDesde);
+      if (fechaHasta) params.set('fecha_hasta', fechaHasta);
+
       const [movRes, invRes] = await Promise.all([
-        authFetch('/api/movimientos'),
+        authFetch(`/api/movimientos${params.toString() ? '?' + params : ''}`),
         authFetch('/api/inventario')
       ]);
       const movData = await movRes.json();
@@ -44,7 +63,7 @@ export default function ReportesPage() {
     } finally {
       setLoading(false);
     }
-  }, [authFetch, toast]);
+  }, [authFetch, toast, fechaDesde, fechaHasta]);
 
   useEffect(() => {
     fetchData();
@@ -63,7 +82,8 @@ export default function ReportesPage() {
             'Curso': m.CURSO,
             'Materia': m.MATERIA,
             'Profesor': m.PROFESOR,
-            'Ítems a devolver': (JSON.parse(m.ITEMS_EGRESADOS || '[]')).map(i => `${i.nombre} (x${i.cantidad})`).join(', '),
+            'Pañolero': m.PAÑOLERO || m['PA\u00d1OLERO'] || '',
+            'Ítems a devolver': parseItems(m.ITEMS_EGRESADOS).map(i => `${i.nombre} (x${i.cantidad})`).join(', '),
           }));
       case 'FALTANTES':
         return inventario
@@ -79,13 +99,19 @@ export default function ReportesPage() {
       case 'MOVIMIENTOS':
         return movimientos.map(m => ({
           'Fecha': m.FECHA,
+          'Hora Egreso': m.HORA_EGRESO,
+          'Hora Ingreso': m.HORA_INGRESO || '',
           'ID Planilla': m.ID_PLANILLA,
           'Estado': m.ESTADO,
           'Alumno': m.ALUMNO_RESPONSABLE,
           'Curso': m.CURSO,
           'Materia': m.MATERIA,
-          'Egresos': (JSON.parse(m.ITEMS_EGRESADOS || '[]')).map(i => `${i.nombre} (x${i.cantidad})`).join(', '),
-          'Devueltos': m.ESTADO === 'DEVUELTO' ? (JSON.parse(m.ITEMS_INGRESADOS || '[]')).map(i => `${i.nombre} (x${i.cantidad})`).join(', ') : '-',
+          'Profesor': m.PROFESOR,
+          'Pañolero': m.PAÑOLERO || m['PA\u00d1OLERO'] || '',
+          'Ítems egresados': parseItems(m.ITEMS_EGRESADOS).map(i => `${i.nombre} (x${i.cantidad})`).join(', '),
+          'Ítems devueltos': m.ITEMS_INGRESADOS ? parseItems(m.ITEMS_INGRESADOS).map(i => `${i.nombre} (x${i.cantidad})`).join(', ') : '-',
+          'Diferencias': m.DIFERENCIA || '',
+          'Observaciones': m.OBSERVACIONES || '',
         }));
       case 'INVENTARIO':
         return inventario
@@ -93,16 +119,17 @@ export default function ReportesPage() {
           .map(i => ({
             'Ítem': i.NOMBRE,
             'Categoría': i.CATEGORIA,
-            'Total': i.STOCK_TOTAL,
+            'Stock Total': i.STOCK_TOTAL,
             'Disponible': i.STOCK_DISPONIBLE,
             'En Uso': i.STOCK_EN_USO,
+            'Mínimo': i.STOCK_MINIMO,
             'Unidad': i.UNIDAD_MEDIDA,
           }));
       case 'MAS_USADOS': {
         const usage = {};
         movimientos.forEach(m => {
           try {
-            const items = JSON.parse(m.ITEMS_EGRESADOS || '[]');
+            const items = parseItems(m.ITEMS_EGRESADOS);
             items.forEach(i => {
               if (!usage[i.nombre]) usage[i.nombre] = 0;
               usage[i.nombre] += parseInt(i.cantidad || 0);
@@ -110,14 +137,15 @@ export default function ReportesPage() {
           } catch(e) {}
         });
         return Object.entries(usage)
-          .sort((a, b) => b[1] - a[1]) // mayor a menor
+          .sort((a, b) => b[1] - a[1])
           .map(([nombre, cantidad]) => {
             const inv = inventario.find(i => i.NOMBRE === nombre);
             return {
               'Ítem': nombre,
               'Categoría': inv?.CATEGORIA || '-',
-              'Veces Egresado (Total)': cantidad,
+              'Total Egresado': cantidad,
               'Stock Actual': inv?.STOCK_DISPONIBLE || '-',
+              'Stock Mínimo': inv?.STOCK_MINIMO || '-',
             };
           });
       }
@@ -128,108 +156,187 @@ export default function ReportesPage() {
 
   const reportData = getReportData();
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handleExportExcel = () => {
+    if (reportData.length === 0) {
+      toast('No hay datos para exportar', 'warning');
+      return;
+    }
 
-  const handleExportCSV = () => {
-    if (reportData.length === 0) return;
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(reportData);
+
+    // Calcular ancho automático de columnas
     const headers = Object.keys(reportData[0]);
-    const csvContent = [
-      headers.join(','),
-      ...reportData.map(row => 
-        headers.map(header => {
-          const cell = String(row[header] || '').replace(/"/g, '""');
-          return `"${cell}"`;
-        }).join(',')
-      )
-    ].join('\n');
+    const colWidths = headers.map(h => {
+      const maxData = Math.max(
+        h.length,
+        ...reportData.map(row => String(row[h] || '').length)
+      );
+      return { wch: Math.min(Math.max(maxData + 2, 12), 60) };
+    });
+    ws['!cols'] = colWidths;
 
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }); // BOM for Excel
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Reporte_${reportType}_${new Date().toISOString().slice(0,10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Estilo de cabeceras
+    const headerColor = HEADER_COLORS[reportType] || 'FFD97D';
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const cellRef = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (!ws[cellRef]) continue;
+      ws[cellRef].s = {
+        fill: { fgColor: { rgb: headerColor } },
+        font: { bold: true, color: { rgb: '1A1A2E' }, sz: 11 },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: {
+          top:    { style: 'thin', color: { rgb: 'AAAAAA' } },
+          bottom: { style: 'thin', color: { rgb: 'AAAAAA' } },
+          left:   { style: 'thin', color: { rgb: 'AAAAAA' } },
+          right:  { style: 'thin', color: { rgb: 'AAAAAA' } },
+        },
+      };
+    }
+
+    // Estilo de filas de datos (alternadas)
+    for (let R = range.s.r + 1; R <= range.e.r; R++) {
+      const isEven = R % 2 === 0;
+      for (let C = range.s.c; C <= range.e.c; C++) {
+        const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!ws[cellRef]) ws[cellRef] = { v: '', t: 's' };
+        ws[cellRef].s = {
+          fill: { fgColor: { rgb: isEven ? 'F5F5F5' : 'FFFFFF' } },
+          font: { sz: 10 },
+          alignment: { vertical: 'center', wrapText: true },
+          border: {
+            top:    { style: 'hair', color: { rgb: 'DDDDDD' } },
+            bottom: { style: 'hair', color: { rgb: 'DDDDDD' } },
+            left:   { style: 'hair', color: { rgb: 'DDDDDD' } },
+            right:  { style: 'hair', color: { rgb: 'DDDDDD' } },
+          },
+        };
+      }
+    }
+
+    // Fila de altura mínima
+    ws['!rows'] = [{ hpt: 22 }, ...Array(range.e.r).fill({ hpt: 18 })];
+
+    const sheetTitle = REPORT_TYPES[reportType].substring(0, 31); // Excel max 31 chars
+    XLSX.utils.book_append_sheet(wb, ws, sheetTitle);
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const fileName = `Reporte_${reportType}_${dateStr}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    toast(`Excel exportado: ${fileName}`, 'success');
   };
+
+  const showDateFilter = reportType === 'MOVIMIENTOS';
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 animate-fade-in print:m-0 print:p-0 print:max-w-full">
-      <div className="flex items-center justify-between gap-4 flex-wrap print:hidden">
+    <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <FileBarChart className="w-6 h-6 text-amber-400" /> Reportes del Sistema
           </h1>
-          <p className="text-gray-400 text-sm mt-0.5">Generá, imprimí y exportá información clave del pañol.</p>
+          <p className="text-gray-400 text-sm mt-0.5">Generá y exportá información clave del pañol en Excel.</p>
         </div>
       </div>
 
-      {/* Controles (ocultos al imprimir) */}
-      <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-center gap-4 print:hidden">
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <Filter className="w-5 h-5 text-gray-500 hidden sm:block" />
-          <select
-            value={reportType}
-            onChange={(e) => setReportType(e.target.value)}
-            className="w-full md:w-80 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm
-              focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
-          >
-            {Object.entries(REPORT_TYPES).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-          </select>
-        </div>
+      {/* Controles */}
+      <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-4 space-y-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <Filter className="w-5 h-5 text-gray-500 hidden sm:block" />
+            <select
+              value={reportType}
+              onChange={(e) => setReportType(e.target.value)}
+              className="w-full md:w-80 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm
+                focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+            >
+              {Object.entries(REPORT_TYPES).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+          </div>
 
-        <div className="flex gap-3 w-full md:w-auto">
-          <Button variant="secondary" onClick={handleExportCSV} disabled={reportData.length === 0} className="flex-1 md:flex-none">
+          <Button variant="primary" onClick={handleExportExcel} disabled={reportData.length === 0 || loading}>
             <Download className="w-4 h-4" /> Exportar a Excel
           </Button>
-          <Button onClick={handlePrint} disabled={reportData.length === 0} className="flex-1 md:flex-none">
-            <Printer className="w-4 h-4" /> Imprimir / PDF
-          </Button>
         </div>
+
+        {/* Filtros de fecha solo para movimientos */}
+        {showDateFilter && (
+          <div className="border-t border-gray-800/50 pt-4">
+            <p className="text-xs text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Calendar className="w-3.5 h-3.5" /> Filtrar por rango de fechas
+            </p>
+            <div className="flex flex-wrap gap-3 items-end">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400">Desde</label>
+                <input
+                  type="date"
+                  value={fechaDesde}
+                  onChange={(e) => setFechaDesde(e.target.value)}
+                  className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm
+                    focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400">Hasta</label>
+                <input
+                  type="date"
+                  value={fechaHasta}
+                  onChange={(e) => setFechaHasta(e.target.value)}
+                  className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm
+                    focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+                />
+              </div>
+              {(fechaDesde || fechaHasta) && (
+                <button
+                  onClick={() => { setFechaDesde(''); setFechaHasta(''); }}
+                  className="px-4 py-2 text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-xl transition-all"
+                >
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Vista del Reporte para impresión y pantalla */}
-      <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6 print:bg-white print:border-none print:p-0">
-        
-        {/* Cabecera de impresión (oculta en pantalla, visible al imprimir) */}
-        <div className="hidden print:block mb-6 border-b pb-4">
-          <h2 className="text-2xl font-bold text-black uppercase">Sistema de Pañol - Colegio Técnico</h2>
-          <p className="text-lg text-gray-800 mt-1">Reporte: {REPORT_TYPES[reportType]}</p>
-          <p className="text-sm text-gray-600 mt-1">Fecha de generación: {new Date().toLocaleDateString('es-AR')} a las {new Date().toLocaleTimeString('es-AR')}</p>
-        </div>
-
-        <div className="mb-4 print:hidden">
-          <h2 className="text-lg font-semibold text-white">{REPORT_TYPES[reportType]}</h2>
-          <p className="text-sm text-gray-400">{reportData.length} registros encontrados.</p>
+      {/* Vista previa */}
+      <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-white">{REPORT_TYPES[reportType]}</h2>
+            <p className="text-sm text-gray-400">{reportData.length} registro{reportData.length !== 1 ? 's' : ''} encontrado{reportData.length !== 1 ? 's' : ''}.</p>
+          </div>
+          {loading && (
+            <div className="w-5 h-5 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+          )}
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16 print:hidden">
+          <div className="flex justify-center py-16">
             <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
           </div>
         ) : reportData.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 print:text-black">
+          <div className="text-center py-12 text-gray-500">
             No hay datos disponibles para este reporte.
           </div>
         ) : (
-          <div className="overflow-x-auto print:overflow-visible">
-            <table className="w-full text-sm text-left print:text-black">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
               <thead>
-                <tr className="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-800/50 print:border-b-2 print:border-black print:text-black">
+                <tr className="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-800/50">
                   {Object.keys(reportData[0]).map((header) => (
-                    <th key={header} className="px-4 py-3">{header}</th>
+                    <th key={header} className="px-4 py-3 whitespace-nowrap">{header}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800/50 print:divide-gray-300">
-                {reportData.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-gray-800/30 transition-colors print:hover:bg-transparent">
+              <tbody className="divide-y divide-gray-800/50">
+                {reportData.slice(0, 50).map((row, idx) => (
+                  <tr key={idx} className="hover:bg-gray-800/30 transition-colors">
                     {Object.values(row).map((val, colIdx) => (
-                      <td key={colIdx} className="px-4 py-3 text-gray-300 print:text-black">
+                      <td key={colIdx} className="px-4 py-3 text-gray-300 max-w-xs truncate">
                         {val}
                       </td>
                     ))}
@@ -237,10 +344,14 @@ export default function ReportesPage() {
                 ))}
               </tbody>
             </table>
+            {reportData.length > 50 && (
+              <p className="text-center text-xs text-gray-600 py-3">
+                Mostrando primeros 50 de {reportData.length} registros. Exportá el Excel para ver todos.
+              </p>
+            )}
           </div>
         )}
       </div>
-
     </div>
   );
 }
