@@ -1,12 +1,83 @@
 'use client';
 // app/dashboard/egreso/page.jsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import Input, { Select, Textarea } from '@/components/ui/Input';
-import { Plus, Trash2, PackagePlus, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, PackagePlus, AlertTriangle, CheckCircle, Search } from 'lucide-react';
+
+function ItemSearchable({ item, inventario, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState(item.nombre);
+  const wrapperRef = useRef(null);
+
+  const filtered = inventario.filter((i) => 
+    i.ACTIVO === 'TRUE' && 
+    parseInt(i.STOCK_DISPONIBLE) > 0 && 
+    i.NOMBRE.toLowerCase().includes(search.toLowerCase())
+  );
+
+  useEffect(() => { setSearch(item.nombre); }, [item.nombre]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setOpen(false);
+        if (!inventario.find(i => i.NOMBRE === search)) {
+          setSearch('');
+          onChange({ ...item, nombre: '', cantidad: 1 });
+        }
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [wrapperRef, search, inventario, item, onChange]);
+
+  return (
+    <div className="relative" ref={wrapperRef}>
+      <div className="relative">
+        <input
+          type="text"
+          value={search}
+          onChange={e => {
+            setSearch(e.target.value);
+            setOpen(true);
+            onChange({ ...item, nombre: '', cantidad: 1 }); // invalidar selección actual
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder="Escribí para buscar..."
+          className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-9 pr-3 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+        />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+      </div>
+      
+      {open && filtered.length > 0 && (
+        <div className="absolute z-20 w-full mt-1 bg-gray-800 border border-gray-700 rounded-xl max-h-48 overflow-y-auto shadow-xl">
+          {filtered.map(i => (
+            <div
+              key={i.ID}
+              onClick={() => {
+                setSearch(i.NOMBRE);
+                onChange({ ...item, nombre: i.NOMBRE, cantidad: 1 });
+                setOpen(false);
+              }}
+              className="px-3 py-2 text-sm text-white hover:bg-gray-700 cursor-pointer border-b border-gray-700/50 last:border-0"
+            >
+              {i.NOMBRE} <span className="text-gray-400 text-xs ml-1">({i.STOCK_DISPONIBLE} disp.)</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {open && search && filtered.length === 0 && (
+        <div className="absolute z-20 w-full mt-1 bg-gray-800 border border-gray-700 rounded-xl p-3 text-sm text-gray-400 shadow-xl">
+          No hay ítems con stock que coincidan.
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ItemRow({ item, inventario, onChange, onRemove, index }) {
   const invItem = inventario.find((i) => i.NOMBRE === item.nombre);
@@ -18,21 +89,7 @@ function ItemRow({ item, inventario, onChange, onRemove, index }) {
       ${excede ? 'bg-red-500/5 border-red-500/30' : 'bg-gray-800/50 border-gray-700/50'}`}>
       <div className="flex-1">
         <label className="text-xs text-gray-400 mb-1 block">Ítem #{index + 1}</label>
-        <select
-          value={item.nombre}
-          onChange={(e) => onChange({ ...item, nombre: e.target.value, cantidad: 1 })}
-          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm
-            focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
-        >
-          <option value="">Seleccionar ítem…</option>
-          {inventario
-            .filter((i) => i.ACTIVO === 'TRUE' && parseInt(i.STOCK_DISPONIBLE) > 0)
-            .map((i) => (
-              <option key={i.ID} value={i.NOMBRE}>
-                {i.NOMBRE} ({i.STOCK_DISPONIBLE} disp.)
-              </option>
-            ))}
-        </select>
+        <ItemSearchable item={item} inventario={inventario} onChange={onChange} />
       </div>
       <div className="w-32">
         <label className="text-xs text-gray-400 mb-1 block">
@@ -211,7 +268,11 @@ export default function EgresoPage() {
             <Select
               label="Materia *"
               value={form.materia}
-              onChange={(e) => setForm({ ...form, materia: e.target.value, profesor: '' })}
+              onChange={(e) => {
+                const matNombre = e.target.value;
+                const matObj = materias.find(m => m.NOMBRE === matNombre);
+                setForm({ ...form, materia: matNombre, profesor: '', curso: matObj?.CURSO || form.curso });
+              }}
               required
             >
               <option value="">Seleccionar materia…</option>
