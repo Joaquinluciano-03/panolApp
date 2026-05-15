@@ -1,5 +1,72 @@
 @import "tailwindcss";
 
+:root {
+  /* =========================================================================
+     TEMA DE LA APLICACIÓN
+     Modificá estos valores Hex para cambiar los colores en toda la app
+     sin tener que modificar los archivos de código fuente.
+  ========================================================================= */
+  
+  /* Color Principal (Actualmente Ámbar) - Usado en botones, destacados y acentos */
+  --theme-primary-50: #fffbeb;
+  --theme-primary-100: #fef3c7;
+  --theme-primary-200: #fde68a;
+  --theme-primary-300: #fcd34d;
+  --theme-primary-400: #fbbf24;
+  --theme-primary-500: #f59e0b;
+  --theme-primary-600: #d97706;
+  --theme-primary-700: #b45309;
+  --theme-primary-800: #92400e;
+  --theme-primary-900: #78350f;
+
+  /* Color Peligro/Alerta (Actualmente Rojo) - Usado en errores, eliminar, faltantes */
+  --theme-danger-50: #fef2f2;
+  --theme-danger-100: #fee2e2;
+  --theme-danger-200: #fecaca;
+  --theme-danger-300: #fca5a5;
+  --theme-danger-400: #f87171;
+  --theme-danger-500: #ef4444;
+  --theme-danger-600: #dc2828;
+  --theme-danger-700: #b91c1c;
+  --theme-danger-800: #991b1b;
+  --theme-danger-900: #7f1d1d;
+
+  /* Color Éxito (Actualmente Verde) - Usado para estados completados */
+  --theme-success-400: #4ade80;
+  --theme-success-500: #22c55e;
+}
+
+@theme {
+  /* Al reescribir los colores por defecto, Tailwind usará nuestras variables */
+  /* Reemplazamos "amber" para que sea nuestro color principal */
+  --color-amber-50: var(--theme-primary-50);
+  --color-amber-100: var(--theme-primary-100);
+  --color-amber-200: var(--theme-primary-200);
+  --color-amber-300: var(--theme-primary-300);
+  --color-amber-400: var(--theme-primary-400);
+  --color-amber-500: var(--theme-primary-500);
+  --color-amber-600: var(--theme-primary-600);
+  --color-amber-700: var(--theme-primary-700);
+  --color-amber-800: var(--theme-primary-800);
+  --color-amber-900: var(--theme-primary-900);
+
+  /* Reemplazamos "red" para que sea nuestro color de peligro */
+  --color-red-50: var(--theme-danger-50);
+  --color-red-100: var(--theme-danger-100);
+  --color-red-200: var(--theme-danger-200);
+  --color-red-300: var(--theme-danger-300);
+  --color-red-400: var(--theme-danger-400);
+  --color-red-500: var(--theme-danger-500);
+  --color-red-600: var(--theme-danger-600);
+  --color-red-700: var(--theme-danger-700);
+  --color-red-800: var(--theme-danger-800);
+  --color-red-900: var(--theme-danger-900);
+
+  /* Reemplazamos "green" para que sea nuestro color de éxito */
+  --color-green-400: var(--theme-success-400);
+  --color-green-500: var(--theme-success-500);
+}
+
 @keyframes slide-in {
   from { transform: translateX(100%); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
