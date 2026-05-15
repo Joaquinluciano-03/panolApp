@@ -17,7 +17,6 @@ import { tiempoTranscurrido, minutosTranscurridos, parseItems } from '@/lib/util
 function ModalFaltantes({ open, onClose, movimiento, onCerrado }) {
   const { authFetch, user } = useAuth();
   const toast = useToast();
-  const [acciones, setAcciones] = useState({});
   const [cerrando, setCerrando] = useState(false);
   const [observaciones, setObservaciones] = useState('');
 
@@ -27,19 +26,10 @@ function ModalFaltantes({ open, onClose, movimiento, onCerrado }) {
     : [];
 
   useEffect(() => {
-    const init = {};
-    faltantes.forEach(({ nombre }) => { init[nombre] = 'DESACTIVAR'; });
-    setAcciones(init);
     setObservaciones('');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movimiento]);
 
   if (!movimiento) return null;
-
-  const setAccion = (nombre, accion) =>
-    setAcciones((prev) => ({ ...prev, [nombre]: accion }));
-
-  const allSet = faltantes.every(({ nombre }) => acciones[nombre]);
 
   const handleConfirm = async () => {
     setCerrando(true);
@@ -47,7 +37,6 @@ function ModalFaltantes({ open, onClose, movimiento, onCerrado }) {
       const faltantesPayload = faltantes.map(({ nombre, cantidad }) => ({
         nombre,
         cantidad,
-        accion: acciones[nombre],
       }));
 
       const res = await authFetch(`/api/movimientos/${movimiento.ID}/cerrar`, {
@@ -57,7 +46,7 @@ function ModalFaltantes({ open, onClose, movimiento, onCerrado }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      toast('Pendiente cerrado correctamente con registro de faltantes.', 'success');
+      toast('Pendiente cerrado. Faltantes descontados y registrados.', 'success');
       onCerrado();
       onClose();
     } catch (err) {
@@ -88,68 +77,24 @@ function ModalFaltantes({ open, onClose, movimiento, onCerrado }) {
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-red-300">
-            Los siguientes ítems <strong>no fueron devueltos</strong>. Elegí qué hacer con cada uno.
+            Los siguientes ítems <strong>no fueron devueltos</strong>. Al confirmar el cierre, estas unidades serán eliminadas del stock y se generará un registro en la tabla de <strong>Descuentos por faltante</strong>.
           </p>
         </div>
 
         {/* Lista de faltantes */}
         <div className="space-y-3">
           {faltantes.map(({ nombre, cantidad }) => (
-            <div key={nombre} className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-white font-semibold">{nombre}</p>
-                  <p className="text-xs text-red-400 mt-0.5">
-                    Faltan <strong>{cantidad}</strong> unidad{cantidad !== 1 ? 'es' : ''}
-                  </p>
-                </div>
-                <XCircle className="w-5 h-5 text-red-400/60" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setAccion(nombre, 'ELIMINAR')}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-                    acciones[nombre] === 'ELIMINAR'
-                      ? 'bg-red-500/20 border-red-500/50 text-red-300'
-                      : 'bg-gray-900/50 border-gray-700 text-gray-400 hover:border-red-500/30 hover:text-red-400'
-                  }`}
-                >
-                  <Trash2 className="w-4 h-4 flex-shrink-0" />
-                  <div className="text-left">
-                    <p className="leading-tight">Eliminar del stock</p>
-                    <p className="text-xs opacity-70 leading-tight">Reduce el total permanentemente</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setAccion(nombre, 'DESACTIVAR')}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-                    acciones[nombre] === 'DESACTIVAR'
-                      ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
-                      : 'bg-gray-900/50 border-gray-700 text-gray-400 hover:border-amber-500/30 hover:text-amber-400'
-                  }`}
-                >
-                  <EyeOff className="w-4 h-4 flex-shrink-0" />
-                  <div className="text-left">
-                    <p className="leading-tight">Marcar no disponible</p>
-                    <p className="text-xs opacity-70 leading-tight">Reactivable si aparece</p>
-                  </div>
-                </button>
-              </div>
-
-              {acciones[nombre] === 'ELIMINAR' && (
-                <p className="text-xs text-red-400/70 mt-2 pl-1">
-                  ⚠ Se reducirá el stock total en {cantidad} unidad{cantidad !== 1 ? 'es' : ''}. Acción permanente.
+            <div key={nombre} className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-semibold">{nombre}</p>
+                <p className="text-xs text-red-400 mt-0.5">
+                  Faltan <span className="font-bold">{cantidad}</span> unidad{cantidad !== 1 ? 'es' : ''}
                 </p>
-              )}
-              {acciones[nombre] === 'DESACTIVAR' && (
-                <p className="text-xs text-amber-400/70 mt-2 pl-1">
-                  El ítem quedará inactivo. Podés reactivarlo desde Inventario si aparece.
-                </p>
-              )}
+              </div>
+              <div className="flex items-center gap-2 text-red-400/80 bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/20">
+                <Trash2 className="w-4 h-4" />
+                <span className="text-xs font-medium">Se eliminará</span>
+              </div>
             </div>
           ))}
         </div>
@@ -174,10 +119,9 @@ function ModalFaltantes({ open, onClose, movimiento, onCerrado }) {
           <Button
             onClick={handleConfirm}
             loading={cerrando}
-            disabled={!allSet}
             className="flex-1 bg-red-600 hover:bg-red-500"
           >
-            Cerrar pendiente
+            Confirmar eliminación y cerrar
           </Button>
         </div>
       </div>

@@ -16,20 +16,6 @@ import Link from 'next/link';
 
 // ─── Modal de gestión de faltantes ───────────────────────────────────────────
 function ModalFaltantes({ open, onClose, faltantes, onConfirm, loading }) {
-  const [acciones, setAcciones] = useState({});
-
-  // Inicializar acciones cuando cambian los faltantes
-  useEffect(() => {
-    const init = {};
-    faltantes.forEach(({ nombre }) => { init[nombre] = 'DESACTIVAR'; });
-    setAcciones(init);
-  }, [faltantes]);
-
-  const setAccion = (nombre, accion) =>
-    setAcciones((prev) => ({ ...prev, [nombre]: accion }));
-
-  const allSet = faltantes.every(({ nombre }) => acciones[nombre]);
-
   return (
     <Modal
       open={open}
@@ -42,70 +28,24 @@ function ModalFaltantes({ open, onClose, faltantes, onConfirm, loading }) {
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-red-300">
-            Los siguientes ítems <strong>no fueron devueltos</strong>. Elegí qué hacer con cada uno para poder cerrar el pendiente.
+            Los siguientes ítems <strong>no fueron devueltos</strong>. Al confirmar el cierre, estas unidades serán eliminadas del stock y se generará un registro en la tabla de <strong>Descuentos por faltante</strong>.
           </p>
         </div>
 
         {/* Lista de faltantes */}
         <div className="space-y-3">
           {faltantes.map(({ nombre, cantidad }) => (
-            <div key={nombre} className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-white font-semibold">{nombre}</p>
-                  <p className="text-xs text-red-400 mt-0.5">
-                    Faltan <span className="font-bold">{cantidad}</span> unidad{cantidad !== 1 ? 'es' : ''}
-                  </p>
-                </div>
-                <XCircle className="w-5 h-5 text-red-400/60" />
-              </div>
-
-              {/* Selector de acción */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setAccion(nombre, 'ELIMINAR')}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-                    acciones[nombre] === 'ELIMINAR'
-                      ? 'bg-red-500/20 border-red-500/50 text-red-300'
-                      : 'bg-gray-900/50 border-gray-700 text-gray-400 hover:border-red-500/30 hover:text-red-400'
-                  }`}
-                >
-                  <Trash2 className="w-4 h-4 flex-shrink-0" />
-                  <div className="text-left">
-                    <p className="leading-tight">Eliminar del stock</p>
-                    <p className="text-xs opacity-70 leading-tight">Reduce el total permanentemente</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setAccion(nombre, 'DESACTIVAR')}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-                    acciones[nombre] === 'DESACTIVAR'
-                      ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
-                      : 'bg-gray-900/50 border-gray-700 text-gray-400 hover:border-amber-500/30 hover:text-amber-400'
-                  }`}
-                >
-                  <EyeOff className="w-4 h-4 flex-shrink-0" />
-                  <div className="text-left">
-                    <p className="leading-tight">Marcar no disponible</p>
-                    <p className="text-xs opacity-70 leading-tight">Se puede reactivar si aparece</p>
-                  </div>
-                </button>
-              </div>
-
-              {/* Descripción de la acción seleccionada */}
-              {acciones[nombre] === 'ELIMINAR' && (
-                <p className="text-xs text-red-400/70 mt-2 pl-1">
-                  ⚠ Se reducirá el stock total en {cantidad} unidad{cantidad !== 1 ? 'es' : ''}. Esta acción no se puede deshacer fácilmente.
+            <div key={nombre} className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-semibold">{nombre}</p>
+                <p className="text-xs text-red-400 mt-0.5">
+                  Faltan <span className="font-bold">{cantidad}</span> unidad{cantidad !== 1 ? 'es' : ''}
                 </p>
-              )}
-              {acciones[nombre] === 'DESACTIVAR' && (
-                <p className="text-xs text-amber-400/70 mt-2 pl-1">
-                  El ítem quedará inactivo y no podrá pedirse. Si aparece, podés reactivarlo desde Inventario.
-                </p>
-              )}
+              </div>
+              <div className="flex items-center gap-2 text-red-400/80 bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/20">
+                <Trash2 className="w-4 h-4" />
+                <span className="text-xs font-medium">Se eliminará</span>
+              </div>
             </div>
           ))}
         </div>
@@ -116,12 +56,11 @@ function ModalFaltantes({ open, onClose, faltantes, onConfirm, loading }) {
             Cancelar
           </Button>
           <Button
-            onClick={() => onConfirm(acciones)}
+            onClick={() => onConfirm()}
             loading={loading}
-            disabled={!allSet}
             className="flex-1 bg-red-600 hover:bg-red-500"
           >
-            Cerrar pendiente
+            Confirmar eliminación y cerrar
           </Button>
         </div>
       </div>
@@ -188,7 +127,7 @@ function ResultScreen({ submitted }) {
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 mb-6 text-left">
             <p className="text-xs text-blue-400 font-medium mb-1">💡 Recordá</p>
             <p className="text-xs text-blue-300">
-              Si algún ítem marcado como &quot;no disponible&quot; aparece más adelante, podés reactivarlo desde la sección <strong>Inventario</strong>.
+              Estos ítems se redujeron del stock total y quedaron anotados en la sección <strong>Descuentos por faltante</strong>.
             </p>
           </div>
         )}
@@ -316,13 +255,12 @@ export default function RetornoPage() {
   };
 
   // ── Confirmar cierre con faltantes ───────────────────────────────────────
-  const handleCerrarConFaltantes = async (acciones) => {
+  const handleCerrarConFaltantes = async () => {
     setCerrando(true);
     try {
       const faltantesPayload = faltantesData.map(({ nombre, cantidad }) => ({
         nombre,
         cantidad,
-        accion: acciones[nombre],
       }));
 
       const res = await authFetch(`/api/movimientos/${id}/cerrar`, {

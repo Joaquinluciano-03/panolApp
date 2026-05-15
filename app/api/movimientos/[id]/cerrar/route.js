@@ -1,13 +1,13 @@
 // app/api/movimientos/[id]/cerrar/route.js
 // POST /api/movimientos/[id]/cerrar
 // Cierra un pendiente/incompleto con ítems no devueltos.
-// Body: { faltantes: [{nombre, cantidad, accion: 'ELIMINAR'|'DESACTIVAR'}], observaciones }
-//   ELIMINAR  → reduce STOCK_TOTAL y STOCK_DISPONIBLE (el ítem desaparece del stock)
-//   DESACTIVAR → ACTIVO=FALSE, devuelve stock_en_uso pero NO suma al disponible (ítem marcado perdido)
+// Body: { faltantes: [{nombre, cantidad}], observaciones }
+// Reduce STOCK_TOTAL y STOCK_DISPONIBLE (el ítem desaparece del stock)
+// Genera un registro en la tabla DESCUENTOS
 import { NextResponse } from 'next/server';
 import {
-  getSheetValues, rowsToObjects, updateRow, SHEETS,
-  nowAR, formatTime,
+  getSheetValues, rowsToObjects, updateRow, appendRow, SHEETS,
+  nowAR, formatDate, formatTime, generateId,
 } from '@/lib/sheets';
 import { requireAdmin } from '@/lib/auth';
 
@@ -20,7 +20,7 @@ export async function POST(request, { params }) {
   try {
     const body = await request.json();
     const { faltantes = [], observaciones = '' } = body;
-    // faltantes: [{ nombre, cantidad, accion }]
+    // faltantes: [{ nombre, cantidad }]
 
     // ── 1. Cargar movimiento ──────────────────────────────────────────────────
     const movRows = await getSheetValues(SHEETS.MOVIMIENTOS);
@@ -37,9 +37,9 @@ export async function POST(request, { params }) {
     const invRows = await getSheetValues(SHEETS.INVENTARIO);
     const inventario = rowsToObjects(invRows);
 
-    // ── 3. Procesar cada ítem faltante ────────────────────────────────────────
+    // ── 3. Procesar cada ítem faltante (SIEMPRE ELIMINAR) ─────────────────────
     for (const faltante of faltantes) {
-      const { nombre, cantidad, accion } = faltante;
+      const { nombre, cantidad } = faltante;
       const invIdx = inventario.findIndex((i) => i.NOMBRE === nombre);
       if (invIdx === -1) continue;
 
@@ -51,23 +51,14 @@ export async function POST(request, { params }) {
       const stockEnUso     = parseInt(invItem.STOCK_EN_USO, 10)     || 0;
       const cantFaltante   = parseInt(cantidad, 10)                 || 0;
 
-      let newTotal    = stockTotal;
-      let newDisp     = stockDisp;
-      let newEnUso    = Math.max(0, stockEnUso - cantFaltante); // liberar el en-uso del faltante
+      // Reduce físicamente el stock total y en uso (ya que no se devuelve al disponible)
+      const newTotal  = Math.max(0, stockTotal - cantFaltante);
+      const newDisp   = stockDisp; // ya no estaba disponible (estaba en uso), solo reduce total
+      const newEnUso  = Math.max(0, stockEnUso - cantFaltante); // liberar el en-uso del faltante
       let newActivo   = invItem.ACTIVO;
 
-      if (accion === 'ELIMINAR') {
-        // Reduce físicamente el stock total y disponible
-        newTotal  = Math.max(0, stockTotal - cantFaltante);
-        newDisp   = stockDisp; // ya no estaba disponible (estaba en uso), solo reduce total
-        // Si el total llega a 0, el item ya no tiene unidades
-        if (newTotal === 0) newActivo = 'FALSE';
-      } else if (accion === 'DESACTIVAR') {
-        // El ítem queda "perdido" — inactivo, no se puede pedir
-        // No suma al disponible, solo limpia el en-uso
-        newActivo = 'FALSE';
-        // newDisp no cambia (no volvió)
-      }
+      // Si el total llega a 0, el item ya no tiene unidades
+      if (newTotal === 0) newActivo = 'FALSE';
 
       const updatedRow = headers.map((h) => {
         if (h === 'MODIFICADO_POR')   return payload.email;
@@ -90,9 +81,9 @@ export async function POST(request, { params }) {
       };
     }
 
-    // ── 4. Construir string de faltantes para registro ────────────────────────
+    // ── 4. Construir string de faltantes ──────────────────────────────────────
     const faltantesStr = faltantes
-      .map((f) => `${f.nombre}:${f.cantidad}(${f.accion})`)
+      .map((f) => `${f.nombre}:${f.cantidad}`)
       .join(',');
 
     // ── 5. Actualizar movimiento → CERRADO_CON_FALTANTES ────────────────────
@@ -101,7 +92,7 @@ export async function POST(request, { params }) {
     const obsActualizada = [
       mov.OBSERVACIONES,
       observaciones,
-      faltantes.length > 0 ? `FALTANTES: ${faltantesStr}` : '',
+      faltantes.length > 0 ? `FALTANTES (ELIMINADOS): ${faltantesStr}` : '',
     ].filter(Boolean).join(' | ');
 
     const updatedMov = movHeaders.map((h) => {
@@ -115,6 +106,26 @@ export async function POST(request, { params }) {
 
     await updateRow(SHEETS.MOVIMIENTOS, movIdx, updatedMov);
 
+    // ── 6. Generar registro en la tabla DESCUENTOS ────────────────────────────
+    if (faltantes.length > 0) {
+      const descuentoId = generateId();
+      const descuentoRow = [
+        descuentoId,                             // ID
+        mov.ID_PLANILLA,                         // ID_PLANILLA
+        formatDate(now),                         // FECHA_CIERRE
+        formatTime(now),                         // HORA_CIERRE
+        mov.ALUMNO_RESPONSABLE,                  // ALUMNO
+        mov.CURSO,                               // CURSO
+        mov.MATERIA,                             // MATERIA
+        mov.PROFESOR,                            // PROFESOR
+        mov.PAÑOLERO,                            // PAÑOLERO (original)
+        faltantesStr,                            // ITEMS_FALTANTES
+        observaciones || 'Cierre de faltantes',  // OBSERVACIONES
+        payload.email,                           // CERRADO_POR (Admin actual)
+      ];
+      await appendRow(SHEETS.DESCUENTOS, descuentoRow);
+    }
+
     return NextResponse.json({
       success: true,
       estado: 'CERRADO_CON_FALTANTES',
@@ -125,3 +136,4 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: 'Error interno al cerrar pendiente' }, { status: 500 });
   }
 }
+
