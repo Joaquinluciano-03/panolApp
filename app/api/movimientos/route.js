@@ -32,7 +32,10 @@ export async function GET(request) {
     result = result.filter((m) => m.FECHA === hoy);
   }
 
-  if (estado) result = result.filter((m) => m.ESTADO === estado);
+  if (estado) {
+    const estados = estado.split(',').map((s) => s.trim());
+    result = result.filter((m) => estados.includes(m.ESTADO));
+  }
   if (materia) result = result.filter((m) => m.MATERIA?.toLowerCase().includes(materia.toLowerCase()));
   if (profesor) result = result.filter((m) => m.PROFESOR?.toLowerCase().includes(profesor.toLowerCase()));
   if (alumno) result = result.filter((m) => m.ALUMNO_RESPONSABLE?.toLowerCase().includes(alumno.toLowerCase()));

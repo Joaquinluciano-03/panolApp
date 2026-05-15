@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button';
 import Link from 'next/link';
 import {
   PackagePlus, Clock, CheckCircle, AlertTriangle,
-  TrendingUp, Package, RefreshCw, BarChart3,
+  TrendingUp, Package, RefreshCw, BarChart3, XCircle,
 } from 'lucide-react';
 import { parseItems, tiempoTranscurrido, minutosTranscurridos } from '@/lib/utils';
 import {
@@ -85,13 +85,17 @@ export default function DashboardPage() {
     day: '2-digit', month: '2-digit', year: 'numeric',
   });
 
-  const movHoy        = movimientos.filter((m) => m.FECHA === hoy);
-  const pendientes    = movimientos.filter((m) => m.ESTADO === 'PENDIENTE');
-  const pendientesHoy = pendientes.filter((m) => m.FECHA === hoy);
+  const movHoy         = movimientos.filter((m) => m.FECHA === hoy);
+  const pendientes     = movimientos.filter((m) => m.ESTADO === 'PENDIENTE');
+  const incompletos    = movimientos.filter((m) => m.ESTADO === 'INCOMPLETO');
+  const cerradosFalt   = movimientos.filter((m) => m.ESTADO === 'CERRADO_CON_FALTANTES');
+  const pendientesHoy  = pendientes.filter((m) => m.FECHA === hoy);
   const completadosHoy = movHoy.filter((m) => m.ESTADO === 'COMPLETADO');
-  const stockBajo     = inventario.filter(
+  const stockBajo      = inventario.filter(
     (i) => i.ACTIVO === 'TRUE' && parseInt(i.STOCK_DISPONIBLE) <= parseInt(i.STOCK_MINIMO || 1)
   );
+  // Items que están desactivados por faltantes (ACTIVO=FALSE y tienen STOCK_EN_USO=0)
+  const itemsPerdidos  = inventario.filter((i) => i.ACTIVO !== 'TRUE');
 
   // Top ítems utilizados (para gráfico)
   const itemUsage = {};
@@ -154,8 +158,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Alerta default admin */}
-      {/* Alertas de stock bajo */}
+      {/* Alerta stock bajo */}
       {stockBajo.length > 0 && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
@@ -167,6 +170,26 @@ export default function DashboardPage() {
               {stockBajo.map((i) => `${i.NOMBRE} (${i.STOCK_DISPONIBLE} disponible)`).join(' · ')}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Alerta incompletos pendientes de cierre (solo admin) */}
+      {isAdmin && incompletos.length > 0 && (
+        <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 flex items-start gap-3">
+          <XCircle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-orange-300">
+              {incompletos.length} retorno{incompletos.length !== 1 ? 's' : ''} incompleto{incompletos.length !== 1 ? 's' : ''} sin cerrar
+            </p>
+            <p className="text-xs text-orange-400/70 mt-0.5">
+              {incompletos.map((m) => m.ALUMNO_RESPONSABLE).join(', ')} — requerím{incompletos.length !== 1 ? 'en' : 'e'} acción de cierre
+            </p>
+          </div>
+          <Link href="/dashboard/pendientes">
+            <button className="text-xs text-orange-400 hover:text-orange-300 font-medium underline underline-offset-2 flex-shrink-0">
+              Gestionar
+            </button>
+          </Link>
         </div>
       )}
 
@@ -189,11 +212,11 @@ export default function DashboardPage() {
         {isAdmin && (
           <>
             <StatCard
-              title="Total pendientes"
-              value={pendientes.length}
-              subtitle="Todos los días"
-              icon={AlertTriangle}
-              color={pendientes.length > 0 ? 'red' : 'green'}
+              title="Sin cerrar (incompletos)"
+              value={incompletos.length}
+              subtitle={incompletos.length > 0 ? 'Requieren acción admin' : 'Todo cerrado'}
+              icon={XCircle}
+              color={incompletos.length > 0 ? 'red' : 'green'}
             />
             <StatCard
               title="Ítems stock bajo"
@@ -220,10 +243,15 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800/50">
           <h2 className="font-semibold text-white flex items-center gap-2">
             <Clock className="w-4 h-4 text-amber-400" />
-            Movimientos Pendientes
-            {pendientes.length > 0 && (
+            Pendientes e Incompletos
+            {(pendientes.length + incompletos.length) > 0 && (
               <span className="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full border border-amber-500/30">
-                {pendientes.length}
+                {pendientes.length + incompletos.length}
+              </span>
+            )}
+            {incompletos.length > 0 && isAdmin && (
+              <span className="bg-orange-500/20 text-orange-300 text-xs px-2 py-0.5 rounded-full border border-orange-500/30">
+                {incompletos.length} sin cerrar
               </span>
             )}
           </h2>
@@ -232,7 +260,7 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {pendientes.length === 0 ? (
+        {(pendientes.length + incompletos.length) === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-gray-500">
             <CheckCircle className="w-10 h-10 mb-3 text-green-500/50" />
             <p>No hay movimientos pendientes</p>
@@ -247,27 +275,38 @@ export default function DashboardPage() {
                   <th className="px-6 py-3 text-left">Materia</th>
                   <th className="px-6 py-3 text-left">Hora egreso</th>
                   <th className="px-6 py-3 text-left">Tiempo</th>
+                  <th className="px-6 py-3 text-center">Estado</th>
                   <th className="px-6 py-3 text-left">Acción</th>
                 </tr>
               </thead>
               <tbody>
-                {pendientes.slice(0, 5).map((m) => {
+                {[...pendientes, ...incompletos].slice(0, 5).map((m) => {
                   const mins = minutosTranscurridos(m.FECHA, m.HORA_EGRESO);
-                  const vencido = mins > 180;
+                  const vencido = m.ESTADO === 'PENDIENTE' && mins > 180;
+                  const esIncompleto = m.ESTADO === 'INCOMPLETO';
                   return (
-                    <tr key={m.ID} className={vencido ? 'bg-red-500/5' : ''}>
+                    <tr key={m.ID} className={vencido ? 'bg-red-500/5' : esIncompleto ? 'bg-orange-500/5' : ''}>
                       <td className="px-6 py-3 text-gray-300 font-mono text-xs">{m.ID_PLANILLA}</td>
                       <td className="px-6 py-3 text-white font-medium">{m.ALUMNO_RESPONSABLE}</td>
                       <td className="px-6 py-3 text-gray-300">{m.MATERIA}</td>
                       <td className="px-6 py-3 text-gray-300">{m.HORA_EGRESO}</td>
                       <td className="px-6 py-3">
-                        <span className={`text-xs font-medium ${vencido ? 'text-red-400' : 'text-amber-400'}`}>
+                        <span className={`text-xs font-medium ${
+                          vencido ? 'text-red-400' : esIncompleto ? 'text-orange-400' : 'text-amber-400'
+                        }`}>
                           {vencido && '⚠ '}{tiempoTranscurrido(m.FECHA, m.HORA_EGRESO)}
                         </span>
                       </td>
+                      <td className="px-6 py-3 text-center">
+                        <Badge variant={m.ESTADO?.toLowerCase()}>
+                          {esIncompleto ? 'Incompleto' : 'Pendiente'}
+                        </Badge>
+                      </td>
                       <td className="px-6 py-3">
                         <Link href={`/dashboard/retorno/${m.ID}`}>
-                          <Button variant="outline" size="xs">Registrar retorno</Button>
+                          <Button variant="outline" size="xs">
+                            {esIncompleto ? 'Ver / Cerrar' : 'Registrar retorno'}
+                          </Button>
                         </Link>
                       </td>
                     </tr>

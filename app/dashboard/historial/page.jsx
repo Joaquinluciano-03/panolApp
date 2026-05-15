@@ -13,6 +13,20 @@ const PAGE_SIZE = 15;
 
 function MovimientoModal({ mov, onClose }) {
   if (!mov) return null;
+
+  // Parse faltantes string: "Nombre:cantidad(ACCION),..."
+  const parseFaltantes = (str) => {
+    if (!str) return [];
+    return str.split(',').map((part) => {
+      const match = part.match(/^(.+):(\d+)(?:\((.+)\))?$/);
+      if (!match) return { nombre: part, cantidad: 0, accion: null };
+      return { nombre: match[1].trim(), cantidad: parseInt(match[2]), accion: match[3] || null };
+    });
+  };
+
+  const tieneFaltantes = mov.ESTADO === 'CERRADO_CON_FALTANTES';
+  const faltantesList  = tieneFaltantes ? parseFaltantes(mov.DIFERENCIA) : [];
+
   return (
     <Modal open={!!mov} onClose={onClose} title={`Detalle: ${mov.ID_PLANILLA}`} size="lg">
       <div className="grid grid-cols-2 gap-4 text-sm">
@@ -25,7 +39,11 @@ function MovimientoModal({ mov, onClose }) {
         ].map(([k, v]) => (
           <div key={k} className="bg-gray-800/30 rounded-xl p-3">
             <p className="text-xs text-gray-500">{k}</p>
-            <p className="text-white font-medium mt-0.5 break-all">{v}</p>
+            <p className={`font-medium mt-0.5 break-all ${
+              k === 'Estado' && tieneFaltantes ? 'text-orange-300' :
+              k === 'Estado' && v === 'COMPLETADO' ? 'text-green-300' :
+              k === 'Estado' && v === 'INCOMPLETO' ? 'text-red-300' : 'text-white'
+            }`}>{v}</p>
           </div>
         ))}
       </div>
@@ -63,7 +81,34 @@ function MovimientoModal({ mov, onClose }) {
           </div>
         )}
 
-        {mov.DIFERENCIA && (
+        {/* Faltantes con detalle de acción */}
+        {tieneFaltantes && faltantesList.length > 0 && (
+          <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3">
+            <p className="text-xs text-orange-400 font-semibold mb-2">Ítems no devueltos (cerrado con faltantes)</p>
+            <div className="space-y-2">
+              {faltantesList.map(({ nombre, cantidad, accion }, i) => (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <span className="text-orange-200">{nombre}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-400 font-medium">−{cantidad}</span>
+                    {accion && (
+                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${
+                        accion === 'ELIMINAR'
+                          ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                          : 'bg-gray-600/30 text-gray-400 border-gray-500/30'
+                      }`}>
+                        {accion === 'ELIMINAR' ? 'Eliminado del stock' : 'Marcado no disponible'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Diferencias simples (INCOMPLETO) */}
+        {mov.DIFERENCIA && !tieneFaltantes && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
             <p className="text-xs text-red-400 mb-1">Diferencias</p>
             <p className="text-sm text-red-300 font-mono">{mov.DIFERENCIA}</p>
@@ -183,6 +228,7 @@ export default function HistorialPage() {
           <option value="PENDIENTE">Pendiente</option>
           <option value="COMPLETADO">Completado</option>
           <option value="INCOMPLETO">Incompleto</option>
+          <option value="CERRADO_CON_FALTANTES">Cerrado con faltantes</option>
         </select>
         <input
           type="date"
