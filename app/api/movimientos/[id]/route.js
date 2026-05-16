@@ -39,24 +39,40 @@ export async function PUT(request, { params }) {
     if (idx === -1) return NextResponse.json({ error: 'Movimiento no encontrado' }, { status: 404 });
 
     const mov = movimientos[idx];
-    if (mov.ESTADO !== 'PENDIENTE') {
-      return NextResponse.json({ error: 'Este movimiento ya fue completado' }, { status: 400 });
+    if (mov.ESTADO !== 'PENDIENTE' && mov.ESTADO !== 'INCOMPLETO') {
+      return NextResponse.json({ error: 'Este movimiento ya está completado o cerrado' }, { status: 400 });
     }
 
-    // Validar que no se devuelva más de lo que salió
+    // Combinar los ítems devueltos previamente con los nuevos si ya estaba INCOMPLETO
+    const previousIngresados = parseItems(mov.ITEMS_INGRESADOS || '');
+    const mapIngresados = {};
+    previousIngresados.forEach((i) => { mapIngresados[i.nombre] = i.cantidad; });
+
+    // Validar que no se devuelva más de lo que salió (sumando lo previo)
     const egresados = parseItems(mov.ITEMS_EGRESADOS);
     for (const item of itemsIngresados) {
       const eg = egresados.find((e) => e.nombre === item.nombre);
       if (!eg) continue;
-      if (item.cantidad > eg.cantidad) {
+      
+      const prevQty = mapIngresados[item.nombre] || 0;
+      const totalIngresado = prevQty + item.cantidad;
+
+      if (totalIngresado > eg.cantidad) {
         return NextResponse.json({
           error: `No se puede retornar más unidades de las egresadas para ${item.nombre}`,
         }, { status: 400 });
       }
+      
+      // Actualizar el mapa combinado
+      mapIngresados[item.nombre] = totalIngresado;
     }
 
     const now = nowAR();
-    const itemsIngStr = itemsIngresados.map((i) => `${i.nombre}:${i.cantidad}`).join(',');
+    // Construir nuevo string de items ingresados
+    const itemsIngStr = Object.entries(mapIngresados)
+      .map(([nombre, cant]) => `${nombre}:${cant}`)
+      .join(',');
+
     const diferencia = calcDiferencia(mov.ITEMS_EGRESADOS, itemsIngStr);
 
     // Determinar estado

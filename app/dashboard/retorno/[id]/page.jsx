@@ -164,6 +164,8 @@ export default function RetornoPage() {
   const [faltantesData, setFaltantesData]   = useState([]);
   const [cerrando, setCerrando]             = useState(false);
 
+  const [sourceItems, setSourceItems]       = useState([]);
+
   const isAdmin = user?.rol === 'ADMIN';
 
   useEffect(() => {
@@ -172,24 +174,33 @@ export default function RetornoPage() {
       .then((d) => {
         if (d.error) { toast(d.error, 'error'); router.push('/dashboard/pendientes'); return; }
         setMovimiento(d.movimiento);
-        // Inicializar retorno con las mismas cantidades egresadas
+        
+        // Si ya está incompleto, trabajamos sobre la diferencia (faltantes)
+        const isInc = d.movimiento.ESTADO === 'INCOMPLETO';
+        const sItems = isInc 
+          ? parseItems(d.movimiento.DIFERENCIA) 
+          : parseItems(d.movimiento.ITEMS_EGRESADOS);
+          
+        setSourceItems(sItems);
+
+        // Inicializar retorno asumiendo que devuelven todo lo que falta
         const init = {};
-        parseItems(d.movimiento.ITEMS_EGRESADOS).forEach(({ nombre, cantidad }) => {
-          init[nombre] = cantidad;
+        sItems.forEach(({ nombre, cantidad }) => {
+          // Remover sufijos de acciones si existen (ej. "(ELIMINAR)")
+          const cantNum = parseInt(String(cantidad).replace(/\(.*\)/, ''), 10);
+          init[nombre] = cantNum;
         });
         setRetorno(init);
       })
       .finally(() => setLoading(false));
   }, [id, authFetch, toast, router]);
 
-  // ── Calcular faltantes actuales ──────────────────────────────────────────
-  const egresados = movimiento ? parseItems(movimiento.ITEMS_EGRESADOS) : [];
-
   const calcFaltantesActuales = () =>
-    egresados
-      .map(({ nombre, cantidad: cantEgresada }) => {
-        const cantRetorno = parseInt(retorno[nombre] ?? cantEgresada, 10);
-        const diff = cantEgresada - cantRetorno;
+    sourceItems
+      .map(({ nombre, cantidad: cantPendiente }) => {
+        const cantNum = parseInt(String(cantPendiente).replace(/\(.*\)/, ''), 10);
+        const cantRetorno = parseInt(retorno[nombre] ?? cantNum, 10);
+        const diff = cantNum - cantRetorno;
         return diff > 0 ? { nombre, cantidad: diff } : null;
       })
       .filter(Boolean);
@@ -200,11 +211,12 @@ export default function RetornoPage() {
     const itemsIngresados = Object.entries(retorno)
       .map(([nombre, cantidad]) => ({ nombre, cantidad: parseInt(cantidad) || 0 }));
 
-    // Validar que no exceda lo egresado
+    // Validar que no exceda lo pendiente
     for (const { nombre, cantidad } of itemsIngresados) {
-      const eg = egresados.find((e) => e.nombre === nombre);
-      if (eg && cantidad > eg.cantidad) {
-        toast(`No podés retornar más de ${eg.cantidad} de ${nombre}`, 'error');
+      const src = sourceItems.find((e) => e.nombre === nombre);
+      const srcCant = src ? parseInt(String(src.cantidad).replace(/\(.*\)/, ''), 10) : 0;
+      if (src && cantidad > srcCant) {
+        toast(`No podés retornar más de ${srcCant} de ${nombre}`, 'error');
         return;
       }
     }
@@ -242,15 +254,21 @@ export default function RetornoPage() {
     }
   };
 
-  // ── Abrir modal para movimientos ya INCOMPLETOS ──────────────────────────
+  // ── Abrir modal para cierre definitivo por el admin ──────────────────────
   const abrirModalFaltantes = () => {
-    // Calcular faltantes desde DIFERENCIA del movimiento
     const diff = parseItems(movimiento.DIFERENCIA);
     if (diff.length === 0) {
       toast('No se detectaron faltantes en este movimiento', 'warning');
       return;
     }
-    setFaltantesData(diff);
+    
+    // Limpiar string de acciones
+    const cleanDiff = diff.map(d => ({
+      ...d,
+      cantidad: parseInt(String(d.cantidad).replace(/\(.*\)/, ''), 10)
+    }));
+    
+    setFaltantesData(cleanDiff);
     setModalFaltantes(true);
   };
 
@@ -347,156 +365,135 @@ export default function RetornoPage() {
           )}
         </div>
 
-        {/* Si ya es INCOMPLETO → mostrar faltantes y botón de cierre */}
-        {yaIncompleto ? (
-          <div className="space-y-4">
-            {/* Resumen de faltantes */}
-            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6">
-              <h2 className="text-sm font-semibold text-red-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" /> Ítems no devueltos (registrados)
-              </h2>
-              {movimiento.DIFERENCIA ? (
-                <div className="space-y-2">
-                  {parseItems(movimiento.DIFERENCIA).map(({ nombre, cantidad }) => (
-                    <div key={nombre} className="flex items-center justify-between px-3 py-2 bg-red-500/5 rounded-xl border border-red-500/10">
-                      <span className="text-white font-medium">{nombre}</span>
-                      <span className="text-red-400 font-bold text-sm">−{cantidad} unidad{cantidad !== 1 ? 'es' : ''}</span>
+        {/* Panel de Admin (Cierre definitivo) */}
+        {yaIncompleto && isAdmin && (
+          <div className="bg-gray-900 border border-red-500/30 rounded-2xl p-6">
+            <h2 className="text-sm font-semibold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" /> Cierre definitivo
+            </h2>
+            <p className="text-gray-400 text-sm mb-4">
+              Si estos ítems definitivamente no van a ser devueltos, podés cerrar el pendiente y eliminar las unidades del stock.
+            </p>
+            <Button
+              onClick={abrirModalFaltantes}
+              className="w-full bg-red-600 hover:bg-red-500 border-red-500"
+            >
+              <XCircle className="w-4 h-4" />
+              Cerrar pendiente con faltantes
+            </Button>
+          </div>
+        )}
+
+        {/* Formulario de retorno (Aplica para PENDIENTE e INCOMPLETO) */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6">
+            <h2 className="text-sm font-semibold text-[var(--theme-primary-400)] uppercase tracking-wider mb-4 flex items-center gap-2">
+              <Package className="w-4 h-4" /> {yaIncompleto ? 'Registrar devolución de faltantes' : 'Cantidades retornadas'}
+            </h2>
+
+            <div className="space-y-3">
+              {sourceItems.map(({ nombre, cantidad: cantPendienteRaw }) => {
+                const cantPendiente = parseInt(String(cantPendienteRaw).replace(/\(.*\)/, ''), 10);
+                const cantRetorno = parseInt(retorno[nombre] ?? cantPendiente, 10);
+                const diff = cantPendiente - cantRetorno;
+                const excede = cantRetorno > cantPendiente;
+
+                return (
+                  <div
+                    key={nombre}
+                    className={`flex items-center gap-4 p-4 rounded-xl border transition-colors
+                      ${excede
+                        ? 'bg-red-500/5 border-red-500/30'
+                        : diff > 0
+                        ? 'bg-orange-500/5 border-orange-500/30'
+                        : 'bg-gray-800/30 border-gray-700/50'
+                      }`}
+                  >
+                    <div className="flex-1">
+                      <p className="text-white font-medium">{nombre}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {yaIncompleto ? 'Faltante previo:' : 'Egresado:'} <span className="text-[var(--theme-primary-400)]">{cantPendiente}</span>
+                      </p>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm">Sin diferencias registradas.</p>
-              )}
+                    <div className="flex items-center gap-3">
+                      <div className="text-center">
+                        <p className="text-xs text-gray-500 mb-1">Retorna</p>
+                        <input
+                          type="number"
+                          min={0}
+                          max={cantPendiente}
+                          value={retorno[nombre] ?? cantPendiente}
+                          onChange={(e) =>
+                            setRetorno({ ...retorno, [nombre]: parseInt(e.target.value) || 0 })
+                          }
+                          className={`w-20 bg-gray-800 border rounded-xl px-3 py-2 text-white text-center
+                            font-semibold focus:outline-none focus:ring-2 transition-all text-sm
+                            ${excede
+                              ? 'border-red-500 focus:ring-red-500/50'
+                              : 'border-gray-700 focus:ring-[var(--theme-primary-500)]'
+                            }`}
+                        />
+                      </div>
+                      {diff > 0 && !excede && (
+                        <div className="text-center">
+                          <p className="text-xs text-orange-400 font-medium">−{diff} faltará</p>
+                        </div>
+                      )}
+                      {excede && (
+                        <div className="text-center">
+                          <AlertTriangle className="w-4 h-4 text-red-400 mx-auto" />
+                          <p className="text-xs text-red-400">Excede</p>
+                        </div>
+                      )}
+                      {diff === 0 && !excede && (
+                        <CheckCircle className="w-5 h-5 text-[var(--theme-success-400)]" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            {isAdmin && (
-              <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6">
-                <h2 className="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-2">
-                  Cerrar pendiente
-                </h2>
-                <p className="text-gray-400 text-sm mb-4">
-                  Como administrador podés cerrar este pendiente, decidiendo qué hacer con cada ítem faltante.
-                </p>
-                <Button
-                  onClick={abrirModalFaltantes}
-                  className="w-full bg-red-600 hover:bg-red-500 border-red-500"
-                >
-                  <XCircle className="w-4 h-4" />
-                  Cerrar pendiente con faltantes
-                </Button>
+            {/* Advertencia si hay diferencias */}
+            {sourceItems.some(({ nombre, cantidad }) => {
+              const cantPendiente = parseInt(String(cantidad).replace(/\(.*\)/, ''), 10);
+              return parseInt(retorno[nombre] ?? cantPendiente, 10) < cantPendiente;
+            }) && (
+              <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-orange-300">
+                    Hay ítems con retorno parcial.
+                  </p>
+                  {isAdmin ? (
+                    <p className="text-xs text-orange-400/80 mt-0.5">
+                      Al confirmar, podrás cerrar el pendiente de forma definitiva desde el panel superior.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-orange-400/80 mt-0.5">
+                      El movimiento continuará en estado <strong>INCOMPLETO</strong> hasta que un administrador lo cierre.
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </div>
-        ) : (
-          /* Formulario de retorno normal */
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6">
-              <h2 className="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Package className="w-4 h-4" /> Cantidades retornadas
-              </h2>
 
-              <div className="space-y-3">
-                {egresados.map(({ nombre, cantidad: cantEgresada }) => {
-                  const cantRetorno = parseInt(retorno[nombre] ?? cantEgresada, 10);
-                  const diff = cantEgresada - cantRetorno;
-                  const excede = cantRetorno > cantEgresada;
+          <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6">
+            <Textarea
+              label="Observaciones del retorno (opcional)"
+              value={observaciones}
+              onChange={(e) => setObservaciones(e.target.value)}
+              placeholder="Ej: Se devuelven los faltantes encontrados..."
+              rows={3}
+            />
+          </div>
 
-                  return (
-                    <div
-                      key={nombre}
-                      className={`flex items-center gap-4 p-4 rounded-xl border transition-colors
-                        ${excede
-                          ? 'bg-red-500/5 border-red-500/30'
-                          : diff > 0
-                          ? 'bg-amber-500/5 border-amber-500/20'
-                          : 'bg-gray-800/30 border-gray-700/50'
-                        }`}
-                    >
-                      <div className="flex-1">
-                        <p className="text-white font-medium">{nombre}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Egresado: <span className="text-amber-400">{cantEgresada}</span>
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-center">
-                          <p className="text-xs text-gray-500 mb-1">Retorna</p>
-                          <input
-                            type="number"
-                            min={0}
-                            max={cantEgresada}
-                            value={retorno[nombre] ?? cantEgresada}
-                            onChange={(e) =>
-                              setRetorno({ ...retorno, [nombre]: parseInt(e.target.value) || 0 })
-                            }
-                            className={`w-20 bg-gray-800 border rounded-xl px-3 py-2 text-white text-center
-                              font-semibold focus:outline-none focus:ring-2 transition-all text-sm
-                              ${excede
-                                ? 'border-red-500 focus:ring-red-500/50'
-                                : 'border-gray-700 focus:ring-amber-500/50'
-                              }`}
-                          />
-                        </div>
-                        {diff > 0 && !excede && (
-                          <div className="text-center">
-                            <p className="text-xs text-amber-400 font-medium">−{diff} faltante</p>
-                          </div>
-                        )}
-                        {excede && (
-                          <div className="text-center">
-                            <AlertTriangle className="w-4 h-4 text-red-400 mx-auto" />
-                            <p className="text-xs text-red-400">Excede</p>
-                          </div>
-                        )}
-                        {diff === 0 && !excede && (
-                          <CheckCircle className="w-5 h-5 text-green-400" />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Advertencia si hay diferencias */}
-              {egresados.some(({ nombre, cantidad }) =>
-                parseInt(retorno[nombre] ?? cantidad, 10) < cantidad
-              ) && (
-                <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-amber-300">
-                      Hay ítems con retorno parcial.
-                    </p>
-                    {isAdmin ? (
-                      <p className="text-xs text-amber-400/80 mt-0.5">
-                        Al confirmar, podrás gestionar qué hacer con los ítems faltantes.
-                      </p>
-                    ) : (
-                      <p className="text-xs text-amber-400/80 mt-0.5">
-                        El movimiento quedará en estado <strong>INCOMPLETO</strong> hasta que un administrador lo cierre.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6">
-              <Textarea
-                label="Observaciones del retorno (opcional)"
-                value={observaciones}
-                onChange={(e) => setObservaciones(e.target.value)}
-                placeholder="Ej: El alumno rompió el martillo, se notificó al profesor…"
-                rows={3}
-              />
-            </div>
-
-            <Button type="submit" size="xl" loading={submitting} className="w-full">
-              <CheckCircle className="w-5 h-5" />
-              Confirmar Retorno
-            </Button>
-          </form>
-        )}
+          <Button type="submit" size="xl" loading={submitting} className="w-full">
+            <CheckCircle className="w-5 h-5" />
+            {yaIncompleto ? 'Confirmar Devolución' : 'Confirmar Retorno'}
+          </Button>
+        </form>
       </div>
 
       {/* Modal de gestión de faltantes */}

@@ -311,7 +311,9 @@ export default function PendientesPage() {
                 </thead>
                 <tbody>
                   {filtered.map((m) => {
-                    const mins    = minutosTranscurridos(m.FECHA, m.HORA_EGRESO);
+                    // Si es INCOMPLETO y tiene HORA_INGRESO, detenemos el tiempo ahí
+                    const horaFin = m.ESTADO === 'INCOMPLETO' ? (m.HORA_INGRESO || null) : null;
+                    const mins    = minutosTranscurridos(m.FECHA, m.HORA_EGRESO, horaFin);
                     const vencido = m.ESTADO === 'PENDIENTE' && mins > 90;
                     const esIncompleto = m.ESTADO === 'INCOMPLETO';
 
@@ -345,19 +347,19 @@ export default function PendientesPage() {
                                 return (
                                   <div key={i} className="flex justify-between gap-3">
                                     <span>{nombre?.trim()}</span>
-                                    <span className="text-amber-400 font-medium">×{cant}</span>
+                                    <span className="text-[var(--theme-primary-400)] font-medium">×{cant}</span>
                                   </div>
                                 );
                               })}
-                              <p className="text-xs text-red-400 mt-1.5 font-medium">Faltantes:</p>
+                              <p className="text-xs text-[var(--theme-danger-400)] mt-1.5 font-medium">Faltantes:</p>
                               {m.DIFERENCIA?.split(',').map((item, i) => {
                                 const [nombre, cant] = item.split(':');
                                 // ignorar la parte de acción entre paréntesis si ya fue cerrado
                                 const cantNum = cant?.replace(/\(.*\)/, '').trim();
                                 return (
                                   <div key={`diff-${i}`} className="flex justify-between gap-3">
-                                    <span className="text-red-300">{nombre?.trim()}</span>
-                                    <span className="text-red-400 font-medium">−{cantNum}</span>
+                                    <span className="text-[var(--theme-danger-300)]">{nombre?.trim()}</span>
+                                    <span className="text-[var(--theme-danger-400)] font-medium">−{cantNum}</span>
                                   </div>
                                 );
                               })}
@@ -369,7 +371,7 @@ export default function PendientesPage() {
                                 return (
                                   <div key={i} className="flex justify-between gap-3">
                                     <span>{nombre?.trim()}</span>
-                                    <span className="text-amber-400 font-medium">×{cant}</span>
+                                    <span className="text-[var(--theme-primary-400)] font-medium">×{cant}</span>
                                   </div>
                                 );
                               })}
@@ -381,9 +383,9 @@ export default function PendientesPage() {
                           <p className="text-xs text-gray-600">{m.FECHA}</p>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`text-sm font-semibold ${vencido ? 'text-red-400' : esIncompleto ? 'text-orange-400' : 'text-amber-400'}`}>
+                          <span className={`text-sm font-semibold ${vencido ? 'text-[var(--theme-danger-400)]' : esIncompleto ? 'text-orange-400' : 'text-[var(--theme-primary-400)]'}`}>
                             {vencido && <AlertTriangle className="w-3 h-3 inline mr-1" />}
-                            {tiempoTranscurrido(m.FECHA, m.HORA_EGRESO)}
+                            {tiempoTranscurrido(m.FECHA, m.HORA_EGRESO, horaFin)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
