@@ -314,13 +314,17 @@ export default function EgresoPage() {
             required
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
+            <Select
               label="Curso/Grado *"
               value={form.curso}
               onChange={(e) => setForm({ ...form, curso: e.target.value })}
-              placeholder="Ej: 4to"
               required
-            />
+            >
+              <option value="">Elegir...</option>
+              {[1, 2, 3, 4, 5, 6, 7].map(num => (
+                <option key={num} value={num.toString()}>{num}°</option>
+              ))}
+            </Select>
             <Select
               label="División *"
               value={form.division}
