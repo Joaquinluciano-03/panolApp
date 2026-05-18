@@ -20,7 +20,7 @@ export async function PUT(request, { params }) {
 
   // Campos editables
   const updatable = [
-    'NOMBRE', 'CATEGORIA', 'STOCK_TOTAL', 'STOCK_DISPONIBLE',
+    'NOMBRE', 'CATEGORIA', 'STOCK_TOTAL',
     'UNIDAD_MEDIDA', 'DESCRIPCION', 'STOCK_MINIMO', 'ACTIVO',
   ];
   const updatedRow = headers.map((h) => {

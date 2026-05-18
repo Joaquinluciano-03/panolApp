@@ -23,7 +23,7 @@ async function fixHeader() {
 
   const sheets = google.sheets({ version: 'v4', auth });
   
-  const HEADERS = ['ID', 'NOMBRE', 'CATEGORIA', 'STOCK_TOTAL', 'STOCK_DISPONIBLE', 'STOCK_EN_USO', 'UNIDAD_MEDIDA', 'DESCRIPCION', 'STOCK_MINIMO', 'ACTIVO', 'MODIFICADO_POR'];
+  const HEADERS = ['ID', 'NOMBRE', 'CATEGORIA', 'STOCK_TOTAL', 'STOCK_EN_USO', 'UNIDAD_MEDIDA', 'DESCRIPCION', 'STOCK_MINIMO', 'ACTIVO', 'MODIFICADO_POR'];
 
   console.log("Updating headers...");
   await sheets.spreadsheets.values.update({

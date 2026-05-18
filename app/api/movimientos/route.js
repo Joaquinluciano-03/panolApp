@@ -100,12 +100,10 @@ export async function POST(request) {
     for (const item of items) {
       const idx = inventario.findIndex((i) => i.NOMBRE === item.nombre);
       const invItem = inventario[idx];
-      const newDisponible = parseInt(invItem.STOCK_DISPONIBLE, 10) - item.cantidad;
       const newEnUso = parseInt(invItem.STOCK_EN_USO, 10) + item.cantidad;
       const headers = invRows[0];
       const updatedRow = headers.map((h) => {
         if (h === 'MODIFICADO_POR') return payload.email;
-        if (h === 'STOCK_DISPONIBLE') return String(newDisponible);
         if (h === 'STOCK_EN_USO') return String(newEnUso);
         return invItem[h] ?? '';
       });

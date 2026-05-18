@@ -47,13 +47,11 @@ export async function POST(request, { params }) {
       const headers = invRows[0];
 
       const stockTotal     = parseInt(invItem.STOCK_TOTAL, 10)     || 0;
-      const stockDisp      = parseInt(invItem.STOCK_DISPONIBLE, 10) || 0;
       const stockEnUso     = parseInt(invItem.STOCK_EN_USO, 10)     || 0;
       const cantFaltante   = parseInt(cantidad, 10)                 || 0;
 
       // Reduce físicamente el stock total y en uso (ya que no se devuelve al disponible)
       const newTotal  = Math.max(0, stockTotal - cantFaltante);
-      const newDisp   = stockDisp; // ya no estaba disponible (estaba en uso), solo reduce total
       const newEnUso  = Math.max(0, stockEnUso - cantFaltante); // liberar el en-uso del faltante
       let newActivo   = invItem.ACTIVO;
 
@@ -63,7 +61,6 @@ export async function POST(request, { params }) {
       const updatedRow = headers.map((h) => {
         if (h === 'MODIFICADO_POR')   return payload.email;
         if (h === 'STOCK_TOTAL')      return String(newTotal);
-        if (h === 'STOCK_DISPONIBLE') return String(newDisp);
         if (h === 'STOCK_EN_USO')     return String(newEnUso);
         if (h === 'ACTIVO')           return newActivo;
         return invItem[h] ?? '';
@@ -75,7 +72,6 @@ export async function POST(request, { params }) {
       inventario[invIdx] = {
         ...invItem,
         STOCK_TOTAL: String(newTotal),
-        STOCK_DISPONIBLE: String(newDisp),
         STOCK_EN_USO: String(newEnUso),
         ACTIVO: newActivo,
       };
