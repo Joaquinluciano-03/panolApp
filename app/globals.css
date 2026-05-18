@@ -6,10 +6,10 @@
      Modificá estos valores Hex para cambiar los colores en toda la app
   ========================================================================= */
   
-  /* Azul Principal - Usado en botones, destacados y acentos (#3050FF) */
-  --theme-blue-400: #5a73ff;
-  --theme-blue-500: #3050FF;
-  --theme-blue-600: #1d3beb;
+  /* Azul Principal - Hecho más grisáceo (Slate Blue) */
+  --theme-blue-400: #6B82B8;
+  --theme-blue-500: #4B6399;
+  --theme-blue-600: #344876;
 
   /* Naranja Ámbar - Usado como acento secundario (#FF6630) */
   --theme-amber-400: #ff855c;
@@ -26,13 +26,13 @@
   --theme-green-500: #30FF5D;
   --theme-green-600: #17e645;
 
-  /* Celeste - Usado para información o acentos (#30BCFF) */
-  --theme-cyan-400: #5cd1ff;
-  --theme-cyan-500: #30BCFF;
-  --theme-cyan-600: #19a1e6;
+  /* Celeste - Hecho más grisáceo (Muted Cyan) */
+  --theme-cyan-400: #74B8D1;
+  --theme-cyan-500: #50A2C2;
+  --theme-cyan-600: #3D85A3;
 
   /* Fondos y Neutros */
-  --theme-gray-950: #000B40; /* Azul muy oscuro (#000B40) - Fondo principal */
+  --theme-gray-950: #0D162A; /* Azul noche grisáceo oscuro */
   --theme-gray-900: #292B33; /* Negro principal (#292B33) - Tarjetas y paneles */
   --theme-gray-800: #515466; /* Gris (#515466) - Bordes y elementos secundarios */
   --theme-gray-700: #6b6f87;
@@ -112,4 +112,4 @@
 
 /* Tabla zebra */
 .table-zebra tbody tr:nth-child(even) { background-color: rgba(255,255,255,0.02); }
-.table-zebra tbody tr:hover { background-color: rgba(48,80,255,0.1); }
+.table-zebra tbody tr:hover { background-color: rgba(75, 99, 153, 0.15); }
