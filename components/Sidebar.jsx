@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard, PackagePlus, Clock, History,
   Package, BookOpen, Users, LogOut, ChevronLeft,
-  Wrench, Menu, FileBarChart, AlertTriangle
+  Menu, FileBarChart, AlertTriangle
 } from 'lucide-react';
 import { clsx } from '@/lib/utils';
 
@@ -57,8 +57,8 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-5 border-b border-gray-800/50 flex-shrink-0">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Wrench className="w-5 h-5 text-gray-950" />
+          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 p-1">
+            <img src="/favicon.ico" alt="Logo" className="w-full h-full object-contain" />
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
