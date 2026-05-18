@@ -52,12 +52,31 @@ export async function POST(request) {
   }
 
   const id = generateId();
-  const total = parseInt(stock_total, 10);
+  const total = parseInt(stock_total, 10) || 0;
+  
+  // ['ID', 'NOMBRE', 'CATEGORIA', 'STOCK_TOTAL', 'STOCK_EN_USO', 'UNIDAD_MEDIDA', 'DESCRIPCION', 'STOCK_MINIMO', 'ACTIVO', 'MODIFICADO_POR']
   const row = [
-    id, nombre, categoria, total, total, 0,
+    id, nombre, categoria, total, 0,
     unidad_medida || 'unidad', descripcion || '', parseInt(stock_minimo, 10) || 1, 'TRUE', payload.email
   ];
   await appendRow(SHEETS.INVENTARIO, row);
+
+  // Registro en auditoría
+  const { nowAR, formatDate, formatTime } = await import('@/lib/sheets');
+  const now = nowAR();
+  const auditoriaRow = [
+    generateId(),
+    formatDate(now),
+    formatTime(now),
+    id,
+    nombre,
+    'ALTA_ITEM',
+    '0',
+    String(total),
+    payload.email,
+    'Creación de ítem'
+  ];
+  await appendRow(SHEETS.AUDITORIA_STOCK, auditoriaRow);
 
   return NextResponse.json({ success: true, id }, { status: 201 });
 }

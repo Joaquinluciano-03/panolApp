@@ -15,6 +15,7 @@ const REPORT_TYPES = {
   INVENTARIO: 'Estado general del inventario',
   MAS_USADOS: 'Ítems más utilizados',
   DESCUENTOS: 'Descuentos por faltante',
+  AUDITORIA: 'Alta / Baja y Cambios de Stock',
 };
 
 // Colores de cabecera por tipo de reporte
@@ -25,6 +26,7 @@ const HEADER_COLORS = {
   INVENTARIO: '95D5B2', // green
   MAS_USADOS: 'C3B1E1', // purple
   DESCUENTOS: 'FFA07A', // light salmon
+  AUDITORIA:  'B19CD9', // pastel purple
 };
 
 export default function ReportesPage() {
@@ -34,6 +36,7 @@ export default function ReportesPage() {
   const [movimientos, setMovimientos] = useState([]);
   const [inventario, setInventario]   = useState([]);
   const [descuentos, setDescuentos]   = useState([]);
+  const [auditoria, setAuditoria]     = useState([]);
   const [loading, setLoading]         = useState(true);
   const [reportType, setReportType]   = useState('PENDIENTES');
 
@@ -53,17 +56,20 @@ export default function ReportesPage() {
       if (fechaDesde) params.set('fecha_desde', fechaDesde);
       if (fechaHasta) params.set('fecha_hasta', fechaHasta);
 
-      const [movRes, invRes, descRes] = await Promise.all([
+      const [movRes, invRes, descRes, audRes] = await Promise.all([
         authFetch(`/api/movimientos${params.toString() ? '?' + params : ''}`),
         authFetch('/api/inventario'),
-        authFetch('/api/descuentos')
+        authFetch('/api/descuentos'),
+        authFetch('/api/auditoria-stock')
       ]);
       const movData = await movRes.json();
       const invData = await invRes.json();
       const descData = await descRes.json();
+      const audData = await audRes.json();
       setMovimientos(movData.movimientos || []);
       setInventario(invData.inventario || []);
       setDescuentos(descData.descuentos || []);
+      setAuditoria(audData.auditoria || []);
     } catch {
       toast('Error al cargar datos para reportes', 'error');
     } finally {
@@ -178,6 +184,27 @@ export default function ReportesPage() {
             'Observaciones': d.OBSERVACIONES || '',
             'Cerrado Por (Admin)': d.CERRADO_POR,
           }));
+      case 'AUDITORIA':
+        return auditoria
+          .filter(a => {
+            if (!fechaDesde && !fechaHasta) return true;
+            const [day, mo, y] = (a.FECHA || '').split('/');
+            if (!y) return true;
+            const t = new Date(y, mo - 1, day);
+            if (fechaDesde && t < new Date(fechaDesde)) return false;
+            if (fechaHasta && t > new Date(fechaHasta)) return false;
+            return true;
+          })
+          .map(a => ({
+            'Fecha': a.FECHA,
+            'Hora': a.HORA,
+            'Ítem': a.ITEM_NOMBRE,
+            'Acción': a.ACCION,
+            'Cant. Anterior': a.CANTIDAD_ANTERIOR,
+            'Cant. Nueva': a.CANTIDAD_NUEVA,
+            'Usuario (Admin)': a.USUARIO,
+            'Observaciones': a.OBSERVACIONES || '',
+          }));
       default:
         return [];
     }
@@ -256,7 +283,7 @@ export default function ReportesPage() {
     toast(`Excel exportado: ${fileName}`, 'success');
   };
 
-  const showDateFilter = reportType === 'MOVIMIENTOS' || reportType === 'DESCUENTOS';
+  const showDateFilter = reportType === 'MOVIMIENTOS' || reportType === 'DESCUENTOS' || reportType === 'AUDITORIA';
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">

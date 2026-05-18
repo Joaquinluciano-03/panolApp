@@ -75,6 +75,23 @@ export async function POST(request, { params }) {
         STOCK_EN_USO: String(newEnUso),
         ACTIVO: newActivo,
       };
+
+      // Registrar auditoría por el descuento
+      if (cantFaltante > 0) {
+        const auditoriaRow = [
+          generateId(),
+          formatDate(nowAR()),
+          formatTime(nowAR()),
+          invItem.ID,
+          invItem.NOMBRE,
+          'REDUCCION_FALTANTE',
+          String(stockTotal),
+          String(newTotal),
+          payload.email,
+          `Reducción por faltante en Planilla ${mov.ID_PLANILLA}`
+        ];
+        await appendRow(SHEETS.AUDITORIA_STOCK, auditoriaRow);
+      }
     }
 
     // ── 4. Construir string de faltantes ──────────────────────────────────────
