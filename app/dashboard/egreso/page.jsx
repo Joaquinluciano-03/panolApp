@@ -142,7 +142,7 @@ export default function EgresoPage() {
   const [submitted, setSubmitted] = useState(null);
 
   const [form, setForm] = useState({
-    materia: '', profesor: '', alumno: '', curso: '', observaciones: '',
+    materia: '', profesor: '', alumno: '', curso: '', division: 'A', observaciones: '',
   });
   const [items, setItems] = useState([{ nombre: '', cantidad: 1 }]);
 
@@ -188,7 +188,11 @@ export default function EgresoPage() {
     try {
       const res = await authFetch('/api/movimientos', {
         method: 'POST',
-        body: JSON.stringify({ ...form, items: validItems }),
+        body: JSON.stringify({ 
+          ...form, 
+          curso: `${form.curso} ${form.division}`,
+          items: validItems 
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -202,7 +206,7 @@ export default function EgresoPage() {
   };
 
   const resetForm = () => {
-    setForm({ materia: '', profesor: '', alumno: '', curso: '', observaciones: '' });
+    setForm({ materia: '', profesor: '', alumno: '', curso: '', division: 'A', observaciones: '' });
     setItems([{ nombre: '', cantidad: 1 }]);
     setSubmitted(null);
   };
@@ -309,14 +313,23 @@ export default function EgresoPage() {
             placeholder="Apellido, Nombre"
             required
           />
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Curso *"
+              label="Curso/Grado *"
               value={form.curso}
               onChange={(e) => setForm({ ...form, curso: e.target.value })}
-              placeholder="Ej: 4to 1ra"
+              placeholder="Ej: 4to"
               required
             />
+            <Select
+              label="División *"
+              value={form.division}
+              onChange={(e) => setForm({ ...form, division: e.target.value })}
+              required
+            >
+              <option value="A">División A</option>
+              <option value="B">División B</option>
+            </Select>
           </div>
         </div>
 
