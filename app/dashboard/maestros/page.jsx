@@ -24,7 +24,7 @@ export default function MaestrosPage() {
   const [profModal, setProfModal] = useState(false);
   const [editMat, setEditMat]     = useState(null);
   const [editProf, setEditProf]   = useState(null);
-  const [matForm, setMatForm]     = useState({ nombre: '', curso: '', division: 'A' });
+  const [matForm, setMatForm]     = useState({ nombre: '', curso: '' });
   const [profForm, setProfForm]   = useState({ nombre: '', apellido: '', materias: [] });
   const [saving, setSaving]       = useState(false);
 
@@ -49,13 +49,13 @@ export default function MaestrosPage() {
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   // ── Materias ──────────────────────────────────────────────────────────────
-  const openCreateMat = () => { setEditMat(null); setMatForm({ nombre: '', curso: '', division: 'A' }); setMatModal(true); };
+  const openCreateMat = () => { setEditMat(null); setMatForm({ nombre: '', curso: '' }); setMatModal(true); };
   const openEditMat = (m) => {
+    // Si viene "4 A", extraer solo el numero o dejar el texto (ahora que sabemos que los viejos tenian division, limpiamos)
     const parts = m.CURSO ? m.CURSO.split(' ') : [];
     const cursoStr = parts[0] ? parts[0].replace('°', '') : '';
-    const division = parts[1] || 'A';
     setEditMat(m); 
-    setMatForm({ nombre: m.NOMBRE, curso: cursoStr, division }); 
+    setMatForm({ nombre: m.NOMBRE, curso: cursoStr }); 
     setMatModal(true); 
   };
 
@@ -63,12 +63,11 @@ export default function MaestrosPage() {
     if (!matForm.nombre) { toast('Nombre requerido', 'warning'); return; }
     setSaving(true);
     try {
-      const finalCurso = matForm.curso ? `${matForm.curso} ${matForm.division}` : '';
       if (editMat) {
-        await authFetch(`/api/materias/${editMat.ID}`, { method: 'PUT', body: JSON.stringify({ nombre: matForm.nombre, curso: finalCurso }) });
+        await authFetch(`/api/materias/${editMat.ID}`, { method: 'PUT', body: JSON.stringify({ nombre: matForm.nombre, curso: matForm.curso }) });
         toast('Materia actualizada', 'success');
       } else {
-        await authFetch('/api/materias', { method: 'POST', body: JSON.stringify({ nombre: matForm.nombre, curso: finalCurso }) });
+        await authFetch('/api/materias', { method: 'POST', body: JSON.stringify({ nombre: matForm.nombre, curso: matForm.curso }) });
         toast('Materia creada', 'success');
       }
       setMatModal(false);
@@ -218,7 +217,7 @@ export default function MaestrosPage() {
       <Modal open={matModal} onClose={() => setMatModal(false)} title={editMat ? 'Editar materia' : 'Nueva materia'} size="sm">
         <div className="space-y-3">
           <Input label="Nombre de la materia *" value={matForm.nombre} onChange={(e) => setMatForm({ ...matForm, nombre: e.target.value })} placeholder="Ej: Tecnología de la Madera" />
-          <div className="grid grid-cols-2 gap-3">
+          <div>
             <Select
               label="Curso/Grado"
               value={matForm.curso}
@@ -228,15 +227,6 @@ export default function MaestrosPage() {
               {[1, 2, 3, 4, 5, 6, 7].map(num => (
                 <option key={num} value={num.toString()}>{num}°</option>
               ))}
-            </Select>
-            <Select
-              label="División"
-              value={matForm.division}
-              onChange={(e) => setMatForm({ ...matForm, division: e.target.value })}
-              disabled={!matForm.curso}
-            >
-              <option value="A">División A</option>
-              <option value="B">División B</option>
             </Select>
           </div>
         </div>
