@@ -1,6 +1,6 @@
 // app/api/inventario/route.js
 import { NextResponse } from 'next/server';
-import { getSheetValues, rowsToObjects, appendRow, SHEETS, generateId } from '@/lib/sheets';
+import { getSheetValues, rowsToObjects, appendRow, SHEETS, generateId, nowAR, formatDate, formatTime } from '@/lib/sheets';
 import { requireAuth, requireAdmin } from '@/lib/auth';
 
 export async function GET(request) {
@@ -62,7 +62,6 @@ export async function POST(request) {
   await appendRow(SHEETS.INVENTARIO, row);
 
   // Registro en auditoría
-  const { nowAR, formatDate, formatTime } = await import('@/lib/sheets');
   const now = nowAR();
   const auditoriaRow = [
     generateId(),
