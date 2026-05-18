@@ -48,7 +48,7 @@ function ItemSearchable({ item, inventario, onChange }) {
           }}
           onFocus={() => setOpen(true)}
           placeholder="Escribí para buscar..."
-          className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-9 pr-3 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+          className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-9 pr-3 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
         />
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
       </div>
@@ -105,12 +105,12 @@ function ItemRow({ item, inventario, onChange, onRemove, index }) {
             focus:outline-none focus:ring-2 transition-all
             ${excede
               ? 'border-red-500/50 focus:ring-red-500/50'
-              : 'border-gray-700 focus:ring-amber-500/50 focus:border-amber-500/50'}`}
+              : 'border-gray-700 focus:ring-blue-500/50 focus:border-blue-500/50'}`}
         />
       </div>
       {invItem && (
         <div className="text-xs text-gray-500 pb-2 min-w-[80px]">
-          <span className={disponible === 0 ? 'text-red-400' : disponible <= parseInt(invItem.STOCK_MINIMO || 1) ? 'text-amber-400' : 'text-green-400'}>
+          <span className={disponible === 0 ? 'text-red-400' : disponible <= parseInt(invItem.STOCK_MINIMO || 1) ? 'text-blue-400' : 'text-green-400'}>
             {disponible === 0 ? '⚠ Sin stock' : `${disponible} disponible`}
           </span>
         </div>
@@ -220,7 +220,7 @@ export default function EgresoPage() {
           <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 text-left space-y-2 mb-6">
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">ID Planilla:</span>
-              <span className="font-mono text-amber-400 font-medium">{submitted.idPlanilla}</span>
+              <span className="font-mono text-blue-400 font-medium">{submitted.idPlanilla}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">Fecha:</span>
@@ -253,7 +253,7 @@ export default function EgresoPage() {
     <div className="max-w-3xl mx-auto animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-          <PackagePlus className="w-6 h-6 text-amber-400" />
+          <PackagePlus className="w-6 h-6 text-blue-400" />
           Registrar Egreso
         </h1>
         <p className="text-gray-400 text-sm mt-1">Completá todos los campos para registrar la salida de materiales.</p>
@@ -262,7 +262,7 @@ export default function EgresoPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Sección: Datos académicos */}
         <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-amber-400 uppercase tracking-wider">Datos académicos</h2>
+          <h2 className="text-sm font-semibold text-blue-400 uppercase tracking-wider">Datos académicos</h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
@@ -300,7 +300,7 @@ export default function EgresoPage() {
 
         {/* Sección: Datos del alumno */}
         <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-amber-400 uppercase tracking-wider">Datos del alumno</h2>
+          <h2 className="text-sm font-semibold text-blue-400 uppercase tracking-wider">Datos del alumno</h2>
 
           <Input
             label="Nombre completo *"
@@ -323,7 +323,7 @@ export default function EgresoPage() {
         {/* Sección: Ítems */}
         <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-amber-400 uppercase tracking-wider">
+            <h2 className="text-sm font-semibold text-blue-400 uppercase tracking-wider">
               Ítems a egresar
             </h2>
             <span className="text-xs text-gray-500">{validItems.length} ítem(s) válido(s)</span>
@@ -360,15 +360,15 @@ export default function EgresoPage() {
 
         {/* Resumen y botón */}
         {validItems.length > 0 && (
-          <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4">
-            <p className="text-sm text-amber-300 font-medium mb-2">Resumen del egreso:</p>
+          <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4">
+            <p className="text-sm text-blue-300 font-medium mb-2">Resumen del egreso:</p>
             <div className="space-y-1">
               {validItems.map((item, i) => {
                 const inv = inventario.find((x) => x.NOMBRE === item.nombre);
                 return (
                   <div key={i} className="flex items-center justify-between text-sm">
                     <span className="text-gray-300">{item.nombre}</span>
-                    <span className="text-amber-400 font-medium">×{item.cantidad}</span>
+                    <span className="text-blue-400 font-medium">×{item.cantidad}</span>
                   </div>
                 );
               })}

@@ -84,7 +84,7 @@ export default function UsuariosPage() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-amber-400" /> Gestión de Usuarios
+            <Users className="w-6 h-6 text-blue-400" /> Gestión de Usuarios
           </h1>
           <p className="text-gray-400 text-sm mt-0.5">{usuarios.length} usuario{usuarios.length !== 1 ? 's' : ''} registrado{usuarios.length !== 1 ? 's' : ''}</p>
         </div>
@@ -93,7 +93,7 @@ export default function UsuariosPage() {
       <div className="bg-gray-900 border border-gray-800/50 rounded-2xl overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-16">
-            <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
           </div>
         ) : (
           <div className="overflow-x-auto">

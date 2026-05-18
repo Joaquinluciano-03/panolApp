@@ -4,67 +4,77 @@
   /* =========================================================================
      TEMA DE LA APLICACIÓN
      Modificá estos valores Hex para cambiar los colores en toda la app
-     sin tener que modificar los archivos de código fuente.
   ========================================================================= */
   
-  /* Color Principal (Actualmente Ámbar) - Usado en botones, destacados y acentos */
-  --theme-primary-50: #fffbeb;
-  --theme-primary-100: #fef3c7;
-  --theme-primary-200: #fde68a;
-  --theme-primary-300: #fcd34d;
-  --theme-primary-400: #fbbf24;
-  --theme-primary-500: #f59e0b;
-  --theme-primary-600: #d97706;
-  --theme-primary-700: #b45309;
-  --theme-primary-800: #92400e;
-  --theme-primary-900: #78350f;
+  /* Azul Principal - Usado en botones, destacados y acentos (#3050FF) */
+  --theme-blue-400: #5a73ff;
+  --theme-blue-500: #3050FF;
+  --theme-blue-600: #1d3beb;
 
-  /* Color Peligro/Alerta (Actualmente Rojo) - Usado en errores, eliminar, faltantes */
-  --theme-danger-50: #fef2f2;
-  --theme-danger-100: #fee2e2;
-  --theme-danger-200: #fecaca;
-  --theme-danger-300: #fca5a5;
-  --theme-danger-400: #f87171;
-  --theme-danger-500: #ef4444;
-  --theme-danger-600: #dc2828;
-  --theme-danger-700: #b91c1c;
-  --theme-danger-800: #991b1b;
-  --theme-danger-900: #7f1d1d;
+  /* Naranja Ámbar - Usado como acento secundario (#FF6630) */
+  --theme-amber-400: #ff855c;
+  --theme-amber-500: #FF6630;
+  --theme-amber-600: #e65119;
 
-  /* Color Éxito (Actualmente Verde) - Usado para estados completados */
-  --theme-success-400: #4ade80;
-  --theme-success-500: #22c55e;
+  /* Rojo (Peligro/Alerta) - Usado en errores, eliminar, faltantes (#FF3049) */
+  --theme-red-400: #ff5c6f;
+  --theme-red-500: #FF3049;
+  --theme-red-600: #e61932;
+
+  /* Verde (Éxito) - Usado para estados completados (#30FF5D) */
+  --theme-green-400: #5eff80;
+  --theme-green-500: #30FF5D;
+  --theme-green-600: #17e645;
+
+  /* Celeste - Usado para información o acentos (#30BCFF) */
+  --theme-cyan-400: #5cd1ff;
+  --theme-cyan-500: #30BCFF;
+  --theme-cyan-600: #19a1e6;
+
+  /* Fondos y Neutros */
+  --theme-gray-950: #121E61; /* Azul oscuro (#121E61) - Fondo principal */
+  --theme-gray-900: #292B33; /* Negro principal (#292B33) - Tarjetas y paneles */
+  --theme-gray-800: #515466; /* Gris (#515466) - Bordes y elementos secundarios */
+  --theme-gray-700: #6b6f87;
+  --theme-gray-600: #888d9e;
+  --theme-gray-500: #a1a5b8;
+  --theme-gray-400: #d1d5db; /* Texto secundario (blanco legible) */
+  --theme-gray-300: #e5e7eb;
+  --theme-gray-100: #f3f4f6; /* Textos principales blancos */
 }
 
 @theme {
   /* Al reescribir los colores por defecto, Tailwind usará nuestras variables */
-  /* Reemplazamos "amber" para que sea nuestro color principal */
-  --color-amber-50: var(--theme-primary-50);
-  --color-amber-100: var(--theme-primary-100);
-  --color-amber-200: var(--theme-primary-200);
-  --color-amber-300: var(--theme-primary-300);
-  --color-amber-400: var(--theme-primary-400);
-  --color-amber-500: var(--theme-primary-500);
-  --color-amber-600: var(--theme-primary-600);
-  --color-amber-700: var(--theme-primary-700);
-  --color-amber-800: var(--theme-primary-800);
-  --color-amber-900: var(--theme-primary-900);
+  
+  --color-blue-400: var(--theme-blue-400);
+  --color-blue-500: var(--theme-blue-500);
+  --color-blue-600: var(--theme-blue-600);
 
-  /* Reemplazamos "red" para que sea nuestro color de peligro */
-  --color-red-50: var(--theme-danger-50);
-  --color-red-100: var(--theme-danger-100);
-  --color-red-200: var(--theme-danger-200);
-  --color-red-300: var(--theme-danger-300);
-  --color-red-400: var(--theme-danger-400);
-  --color-red-500: var(--theme-danger-500);
-  --color-red-600: var(--theme-danger-600);
-  --color-red-700: var(--theme-danger-700);
-  --color-red-800: var(--theme-danger-800);
-  --color-red-900: var(--theme-danger-900);
+  --color-amber-400: var(--theme-amber-400);
+  --color-amber-500: var(--theme-amber-500);
+  --color-amber-600: var(--theme-amber-600);
 
-  /* Reemplazamos "green" para que sea nuestro color de éxito */
-  --color-green-400: var(--theme-success-400);
-  --color-green-500: var(--theme-success-500);
+  --color-red-400: var(--theme-red-400);
+  --color-red-500: var(--theme-red-500);
+  --color-red-600: var(--theme-red-600);
+
+  --color-green-400: var(--theme-green-400);
+  --color-green-500: var(--theme-green-500);
+  --color-green-600: var(--theme-green-600);
+
+  --color-cyan-400: var(--theme-cyan-400);
+  --color-cyan-500: var(--theme-cyan-500);
+  --color-cyan-600: var(--theme-cyan-600);
+
+  --color-gray-950: var(--theme-gray-950);
+  --color-gray-900: var(--theme-gray-900);
+  --color-gray-800: var(--theme-gray-800);
+  --color-gray-700: var(--theme-gray-700);
+  --color-gray-600: var(--theme-gray-600);
+  --color-gray-500: var(--theme-gray-500);
+  --color-gray-400: var(--theme-gray-400);
+  --color-gray-300: var(--theme-gray-300);
+  --color-gray-100: var(--theme-gray-100);
 }
 
 @keyframes slide-in {
@@ -87,9 +97,9 @@
 /* Scrollbar personalizado */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+::-webkit-scrollbar-thumb { background: var(--theme-gray-700); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--theme-gray-600); }
 
 /* Tabla zebra */
 .table-zebra tbody tr:nth-child(even) { background-color: rgba(255,255,255,0.02); }
-.table-zebra tbody tr:hover { background-color: rgba(245,158,11,0.05); }
+.table-zebra tbody tr:hover { background-color: rgba(48,80,255,0.1); }

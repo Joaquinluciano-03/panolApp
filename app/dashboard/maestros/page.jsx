@@ -115,14 +115,14 @@ export default function MaestrosPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-amber-400" /> Materias
+              <BookOpen className="w-5 h-5 text-blue-400" /> Materias
             </h2>
             <Button size="sm" onClick={openCreateMat}><Plus className="w-4 h-4" /> Nueva</Button>
           </div>
 
           <div className="bg-gray-900 border border-gray-800/50 rounded-2xl overflow-hidden">
             {loading ? (
-              <div className="py-12 flex justify-center"><div className="w-6 h-6 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" /></div>
+              <div className="py-12 flex justify-center"><div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /></div>
             ) : materias.length === 0 ? (
               <p className="text-center py-8 text-gray-500">No hay materias registradas</p>
             ) : (
@@ -165,14 +165,14 @@ export default function MaestrosPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Users className="w-5 h-5 text-amber-400" /> Profesores
+              <Users className="w-5 h-5 text-blue-400" /> Profesores
             </h2>
             <Button size="sm" onClick={openCreateProf}><Plus className="w-4 h-4" /> Nuevo</Button>
           </div>
 
           <div className="bg-gray-900 border border-gray-800/50 rounded-2xl overflow-hidden">
             {loading ? (
-              <div className="py-12 flex justify-center"><div className="w-6 h-6 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" /></div>
+              <div className="py-12 flex justify-center"><div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" /></div>
             ) : profesores.length === 0 ? (
               <p className="text-center py-8 text-gray-500">No hay profesores registrados</p>
             ) : (
@@ -236,7 +236,7 @@ export default function MaestrosPage() {
                       if (e.target.checked) setProfForm({ ...profForm, materias: [...profForm.materias, m.NOMBRE] });
                       else setProfForm({ ...profForm, materias: profForm.materias.filter(x => x !== m.NOMBRE) });
                     }}
-                    className="rounded border-gray-700 bg-gray-800 text-amber-500 focus:ring-amber-500"
+                    className="rounded border-gray-700 bg-gray-800 text-blue-500 focus:ring-blue-500"
                   />
                   {m.NOMBRE} {m.CURSO ? `(${m.CURSO})` : ''}
                 </label>

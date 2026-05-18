@@ -57,7 +57,7 @@ function MovimientoModal({ mov, onClose }) {
               return (
                 <div key={i} className="flex justify-between text-sm">
                   <span className="text-gray-300">{nombre?.trim()}</span>
-                  <span className="text-amber-400 font-medium">×{cant}</span>
+                  <span className="text-blue-400 font-medium">×{cant}</span>
                 </div>
               );
             })}
@@ -195,7 +195,7 @@ export default function HistorialPage() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <History className="w-6 h-6 text-amber-400" />
+            <History className="w-6 h-6 text-blue-400" />
             Historial de Movimientos
           </h1>
           <p className="text-gray-400 text-sm mt-0.5">{total} registro{total !== 1 ? 's' : ''}</p>
@@ -215,14 +215,14 @@ export default function HistorialPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-9 pr-3 py-2 text-white text-sm
-              placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+              placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
           />
         </div>
         <select
           value={estado}
           onChange={(e) => setEstado(e.target.value)}
           className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm
-            focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+            focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
         >
           <option value="">Todos los estados</option>
           <option value="PENDIENTE">Pendiente</option>
@@ -235,7 +235,7 @@ export default function HistorialPage() {
           value={fechaDesde}
           onChange={(e) => setFechaDesde(e.target.value)}
           className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm
-            focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+            focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
           placeholder="Desde"
         />
         <input
@@ -243,7 +243,7 @@ export default function HistorialPage() {
           value={fechaHasta}
           onChange={(e) => setFechaHasta(e.target.value)}
           className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm
-            focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+            focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
           placeholder="Hasta"
         />
       </div>
@@ -252,7 +252,7 @@ export default function HistorialPage() {
       <div className="bg-gray-900 border border-gray-800/50 rounded-2xl overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-16">
-            <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
           </div>
         ) : paginated.length === 0 ? (
           <div className="text-center py-16 text-gray-500">
@@ -282,7 +282,7 @@ export default function HistorialPage() {
                       onClick={() => setSelected(m)}
                       className="cursor-pointer"
                     >
-                      <td className="px-5 py-3 font-mono text-xs text-amber-400">{m.ID_PLANILLA}</td>
+                      <td className="px-5 py-3 font-mono text-xs text-blue-400">{m.ID_PLANILLA}</td>
                       <td className="px-5 py-3 text-gray-300">
                         <p>{m.FECHA}</p>
                         <p className="text-xs text-gray-500">{m.HORA_EGRESO}</p>

@@ -8,14 +8,14 @@ const ToastContext = createContext(null);
 const ICONS = {
   success: <CheckCircle className="w-5 h-5 text-green-400" />,
   error:   <XCircle className="w-5 h-5 text-red-400" />,
-  warning: <AlertTriangle className="w-5 h-5 text-amber-400" />,
+  warning: <AlertTriangle className="w-5 h-5 text-blue-400" />,
   info:    <Info className="w-5 h-5 text-blue-400" />,
 };
 
 const BG = {
   success: 'border-green-500/30 bg-green-950/80',
   error:   'border-red-500/30 bg-red-950/80',
-  warning: 'border-amber-500/30 bg-amber-950/80',
+  warning: 'border-blue-500/30 bg-blue-950/80',
   info:    'border-blue-500/30 bg-blue-950/80',
 };
 

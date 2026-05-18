@@ -19,7 +19,7 @@ export default function DashboardLayout({ children }) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+          <div className="w-10 h-10 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
           <p className="text-gray-400 text-sm">Cargando...</p>
         </div>
       </div>
@@ -31,15 +31,15 @@ export default function DashboardLayout({ children }) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-gray-900 border border-gray-800/50 rounded-3xl p-10 text-center shadow-2xl">
-          <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Clock className="w-10 h-10 text-amber-400 animate-pulse" />
+          <div className="w-20 h-20 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Clock className="w-10 h-10 text-blue-400 animate-pulse" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-3">Cuenta pendiente</h1>
           <p className="text-gray-400 leading-relaxed mb-2">
             Tu cuenta fue registrada correctamente.
           </p>
           <p className="text-gray-400 leading-relaxed mb-8">
-            <span className="text-amber-300 font-medium">Esperá a ser habilitado por un administrador</span> para acceder al sistema.
+            <span className="text-blue-300 font-medium">Esperá a ser habilitado por un administrador</span> para acceder al sistema.
           </p>
           <div className="bg-gray-800/50 rounded-2xl p-4 mb-8 text-left space-y-2">
             <p className="text-xs text-gray-500 uppercase tracking-wider">Tu cuenta</p>

@@ -76,20 +76,20 @@ function ResultScreen({ submitted }) {
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">
       <div className={`bg-gray-900 border rounded-2xl p-8 text-center ${
-        isComplete ? 'border-green-500/20' : isCerrado ? 'border-red-500/20' : 'border-amber-500/20'
+        isComplete ? 'border-green-500/20' : isCerrado ? 'border-red-500/20' : 'border-blue-500/20'
       }`}>
         <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border ${
           isComplete
             ? 'bg-green-500/10 border-green-500/20'
             : isCerrado
             ? 'bg-red-500/10 border-red-500/20'
-            : 'bg-amber-500/10 border-amber-500/20'
+            : 'bg-blue-500/10 border-blue-500/20'
         }`}>
           {isComplete
             ? <CheckCircle className="w-9 h-9 text-green-400" />
             : isCerrado
             ? <XCircle className="w-9 h-9 text-red-400" />
-            : <AlertTriangle className="w-9 h-9 text-amber-400" />
+            : <AlertTriangle className="w-9 h-9 text-blue-400" />
           }
         </div>
 
@@ -112,12 +112,12 @@ function ResultScreen({ submitted }) {
           <div className={`border rounded-xl p-3 mb-6 text-left ${
             isCerrado
               ? 'bg-red-500/10 border-red-500/20'
-              : 'bg-amber-500/10 border-amber-500/20'
+              : 'bg-blue-500/10 border-blue-500/20'
           }`}>
-            <p className={`text-xs font-medium mb-1 ${isCerrado ? 'text-red-400' : 'text-amber-400'}`}>
+            <p className={`text-xs font-medium mb-1 ${isCerrado ? 'text-red-400' : 'text-blue-400'}`}>
               {isCerrado ? 'Ítems faltantes registrados:' : 'Diferencias detectadas:'}
             </p>
-            <p className={`text-sm font-mono ${isCerrado ? 'text-red-300' : 'text-amber-300'}`}>
+            <p className={`text-sm font-mono ${isCerrado ? 'text-red-300' : 'text-blue-300'}`}>
               {submitted.diferencia}
             </p>
           </div>
@@ -302,7 +302,7 @@ export default function RetornoPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -328,9 +328,9 @@ export default function RetornoPage() {
               {yaIncompleto ? 'Gestionar Pendiente Incompleto' : 'Registrar Retorno'}
             </h1>
             <p className="text-gray-400 text-sm mt-0.5">
-              Planilla: <span className="font-mono text-amber-400">{movimiento.ID_PLANILLA}</span>
+              Planilla: <span className="font-mono text-blue-400">{movimiento.ID_PLANILLA}</span>
               {yaIncompleto && (
-                <span className="ml-2 text-xs px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded-full border border-amber-500/30">
+                <span className="ml-2 text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30">
                   Incompleto
                 </span>
               )}
@@ -340,7 +340,7 @@ export default function RetornoPage() {
 
         {/* Info del egreso */}
         <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6">
-          <h2 className="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-4">
+          <h2 className="text-sm font-semibold text-blue-400 uppercase tracking-wider mb-4">
             Datos del egreso original
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">

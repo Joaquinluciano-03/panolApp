@@ -35,8 +35,8 @@ export default function LoginPage() {
       <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4 relative overflow-hidden">
         {/* Fondo decorativo */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl" />
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl" />
           <div className="absolute inset-0 opacity-[0.03]"
             style={{ backgroundImage: 'linear-gradient(rgba(245,158,11,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(245,158,11,0.5) 1px,transparent 1px)', backgroundSize: '40px 40px' }}
           />
@@ -46,7 +46,7 @@ export default function LoginPage() {
           <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-8 shadow-2xl">
             {/* Logo */}
             <div className="flex flex-col items-center mb-8">
-              <div className="w-16 h-16 bg-amber-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-amber-500/30">
+              <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30">
                 <Wrench className="w-9 h-9 text-gray-950" />
               </div>
               <h1 className="text-2xl font-bold text-white text-center">Sistema de Pañol</h1>
@@ -56,7 +56,7 @@ export default function LoginPage() {
             <div className="flex flex-col items-center justify-center gap-4 py-4">
               {loading ? (
                 <div className="flex flex-col items-center gap-4">
-                  <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
                   <p className="text-sm text-gray-400">Verificando...</p>
                 </div>
               ) : (

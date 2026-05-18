@@ -290,7 +290,7 @@ export default function ReportesPage() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <FileBarChart className="w-6 h-6 text-amber-400" /> Reportes del Sistema
+            <FileBarChart className="w-6 h-6 text-blue-400" /> Reportes del Sistema
           </h1>
           <p className="text-gray-400 text-sm mt-0.5">Generá y exportá información clave del pañol en Excel.</p>
         </div>
@@ -305,7 +305,7 @@ export default function ReportesPage() {
               value={reportType}
               onChange={(e) => setReportType(e.target.value)}
               className="w-full md:w-80 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm
-                focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+                focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
             >
               {Object.entries(REPORT_TYPES).map(([key, label]) => (
                 <option key={key} value={key}>{label}</option>
@@ -332,7 +332,7 @@ export default function ReportesPage() {
                   value={fechaDesde}
                   onChange={(e) => setFechaDesde(e.target.value)}
                   className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm
-                    focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+                    focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -342,7 +342,7 @@ export default function ReportesPage() {
                   value={fechaHasta}
                   onChange={(e) => setFechaHasta(e.target.value)}
                   className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm
-                    focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+                    focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                 />
               </div>
               {(fechaDesde || fechaHasta) && (
@@ -366,13 +366,13 @@ export default function ReportesPage() {
             <p className="text-sm text-gray-400">{reportData.length} registro{reportData.length !== 1 ? 's' : ''} encontrado{reportData.length !== 1 ? 's' : ''}.</p>
           </div>
           {loading && (
-            <div className="w-5 h-5 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
           )}
         </div>
 
         {loading ? (
           <div className="flex justify-center py-16">
-            <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
           </div>
         ) : reportData.length === 0 ? (
           <div className="text-center py-12 text-gray-500">

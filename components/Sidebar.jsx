@@ -57,7 +57,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-5 border-b border-gray-800/50 flex-shrink-0">
-          <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
             <Wrench className="w-5 h-5 text-gray-950" />
           </div>
           {!collapsed && (
@@ -85,11 +85,11 @@ export default function Sidebar({ collapsed, setCollapsed }) {
                 className={clsx(
                   'flex items-center gap-3 mx-2 px-3 py-2.5 rounded-xl transition-all duration-200 group',
                   active
-                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                    ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                     : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
                 )}
               >
-                <Icon className={clsx('w-5 h-5 flex-shrink-0', active && 'text-amber-400')} />
+                <Icon className={clsx('w-5 h-5 flex-shrink-0', active && 'text-blue-400')} />
                 {!collapsed && (
                   <span className="text-sm font-medium truncate">{label}</span>
                 )}

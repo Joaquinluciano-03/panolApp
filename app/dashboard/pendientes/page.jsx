@@ -67,7 +67,7 @@ function ModalFaltantes({ open, onClose, movimiento, onCerrado }) {
         {/* Cabecera del movimiento */}
         <div className="bg-gray-800/50 rounded-xl p-3 text-sm">
           <p className="text-gray-400">
-            Planilla: <span className="text-amber-400 font-mono">{movimiento.ID_PLANILLA}</span>
+            Planilla: <span className="text-blue-400 font-mono">{movimiento.ID_PLANILLA}</span>
             {' · '}
             <span className="text-white">{movimiento.ALUMNO_RESPONSABLE}</span>
           </p>
@@ -108,7 +108,7 @@ function ModalFaltantes({ open, onClose, movimiento, onCerrado }) {
             placeholder="Ej: El alumno extravió el destornillador…"
             rows={2}
             className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm
-              placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none transition-all"
+              placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none transition-all"
           />
         </div>
 
@@ -200,11 +200,11 @@ export default function PendientesPage() {
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Clock className="w-6 h-6 text-amber-400" />
+              <Clock className="w-6 h-6 text-blue-400" />
               Movimientos Pendientes
             </h1>
             <p className="text-gray-400 text-sm mt-0.5">
-              <span className="text-amber-400 font-medium">{pendientes.length}</span> pendiente{pendientes.length !== 1 ? 's' : ''}
+              <span className="text-blue-400 font-medium">{pendientes.length}</span> pendiente{pendientes.length !== 1 ? 's' : ''}
               {incompletos.length > 0 && (
                 <>
                   {' · '}
@@ -258,7 +258,7 @@ export default function PendientesPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               className="w-full bg-gray-900 border border-gray-700 rounded-xl pl-10 pr-4 py-2.5 text-white
-                placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all text-sm"
+                placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all text-sm"
             />
           </div>
           <div className="flex gap-1.5 bg-gray-900 border border-gray-700 rounded-xl p-1">
@@ -271,7 +271,7 @@ export default function PendientesPage() {
                     ? est === 'INCOMPLETO'
                       ? 'bg-red-500/20 text-red-300 border border-red-500/30'
                       : est === 'PENDIENTE'
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                       : 'bg-gray-700 text-white'
                     : 'text-gray-500 hover:text-gray-300'
                 }`}
@@ -286,7 +286,7 @@ export default function PendientesPage() {
         <div className="bg-gray-900 border border-gray-800/50 rounded-2xl overflow-hidden">
           {loading ? (
             <div className="flex justify-center py-16">
-              <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-16 text-gray-500">
@@ -441,7 +441,7 @@ export default function PendientesPage() {
         {!loading && filtered.length > 0 && (
           <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+              <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
               Pendiente: esperando retorno
             </span>
             <span className="flex items-center gap-1.5">

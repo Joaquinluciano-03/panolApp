@@ -17,7 +17,7 @@ import {
 
 function StatCard({ title, value, subtitle, icon: Icon, color = 'amber' }) {
   const colors = {
-    amber: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
+    amber: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
     green: 'bg-green-500/10 border-green-500/20 text-green-400',
     red:   'bg-red-500/10 border-red-500/20 text-red-400',
     blue:  'bg-blue-500/10 border-blue-500/20 text-blue-400',
@@ -124,7 +124,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -242,10 +242,10 @@ export default function DashboardPage() {
       <section className="bg-gray-900 border border-gray-800/50 rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800/50">
           <h2 className="font-semibold text-white flex items-center gap-2">
-            <Clock className="w-4 h-4 text-amber-400" />
+            <Clock className="w-4 h-4 text-blue-400" />
             Pendientes e Incompletos
             {(pendientes.length + incompletos.length) > 0 && (
-              <span className="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full border border-amber-500/30">
+              <span className="bg-blue-500/20 text-blue-300 text-xs px-2 py-0.5 rounded-full border border-blue-500/30">
                 {pendientes.length + incompletos.length}
               </span>
             )}
@@ -292,7 +292,7 @@ export default function DashboardPage() {
                       <td className="px-6 py-3 text-gray-300">{m.HORA_EGRESO}</td>
                       <td className="px-6 py-3">
                         <span className={`text-xs font-medium ${
-                          vencido ? 'text-red-400' : esIncompleto ? 'text-orange-400' : 'text-amber-400'
+                          vencido ? 'text-red-400' : esIncompleto ? 'text-orange-400' : 'text-blue-400'
                         }`}>
                           {vencido && '⚠ '}{tiempoTranscurrido(m.FECHA, m.HORA_EGRESO)}
                         </span>
@@ -324,7 +324,7 @@ export default function DashboardPage() {
           {/* Top ítems */}
           <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6">
             <h2 className="font-semibold text-white mb-4 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-amber-400" />
+              <BarChart3 className="w-4 h-4 text-blue-400" />
               Ítems más utilizados (Top 10)
             </h2>
             {topItems.length === 0 ? (
@@ -351,7 +351,7 @@ export default function DashboardPage() {
           {/* Movimientos por materia */}
           <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6">
             <h2 className="font-semibold text-white mb-4 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-amber-400" />
+              <BarChart3 className="w-4 h-4 text-blue-400" />
               Movimientos por Materia
             </h2>
             {materiasData.length === 0 ? (
