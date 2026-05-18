@@ -15,6 +15,29 @@ export default function DashboardLayout({ children }) {
     if (!loading && !user) router.push('/login');
   }, [user, loading, router]);
 
+  // Pantalla completa automática para Pañoleros en la primera interacción
+  useEffect(() => {
+    if (user?.rol === 'PAÑOLERO') {
+      const handleFirstInteraction = () => {
+        if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch((err) => {
+            console.warn(`Error al intentar pantalla completa: ${err.message}`);
+          });
+        }
+        window.removeEventListener('click', handleFirstInteraction);
+        window.removeEventListener('keydown', handleFirstInteraction);
+      };
+
+      window.addEventListener('click', handleFirstInteraction);
+      window.addEventListener('keydown', handleFirstInteraction);
+
+      return () => {
+        window.removeEventListener('click', handleFirstInteraction);
+        window.removeEventListener('keydown', handleFirstInteraction);
+      };
+    }
+  }, [user?.rol]);
+
   if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
