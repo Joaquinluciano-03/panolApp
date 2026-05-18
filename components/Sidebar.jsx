@@ -57,8 +57,8 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-5 border-b border-gray-800/50 flex-shrink-0">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 p-1">
-            <img src="/favicon.ico" alt="Logo" className="w-full h-full object-contain" />
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 p-1">
+            <img src="/favicon.ico" alt="Logo" className="w-full h-full object-contain rounded-full" />
           </div>
           {!collapsed && (
             <div className="overflow-hidden">

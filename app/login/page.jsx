@@ -42,8 +42,8 @@ export default function LoginPage() {
           <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-8 shadow-2xl">
             {/* Logo */}
             <div className="flex flex-col items-center mb-8">
-              <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30 p-2">
-                <img src="/favicon.ico" alt="Logo" className="w-full h-full object-contain" />
+              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30 p-2">
+                <img src="/favicon.ico" alt="Logo" className="w-full h-full object-contain rounded-full" />
               </div>
               <h1 className="text-2xl font-bold text-white text-center">Sistema de Pañol</h1>
               <p className="text-gray-400 text-sm mt-1 text-center">Colegio Técnico — Gestión de Herramientas</p>
