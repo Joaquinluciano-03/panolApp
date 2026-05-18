@@ -50,7 +50,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
       <aside
         className={clsx(
-          'fixed lg:relative z-30 h-screen flex flex-col bg-gray-950 border-r border-gray-800/50',
+          'fixed lg:relative z-30 h-screen flex flex-col bg-gray-950/50 backdrop-blur-3xl border-r border-gray-800/50',
           'transition-all duration-300 ease-in-out',
           collapsed ? '-translate-x-full lg:translate-x-0 lg:w-16' : 'translate-x-0 w-64'
         )}
