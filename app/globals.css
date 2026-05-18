@@ -32,7 +32,7 @@
   --theme-cyan-600: #19a1e6;
 
   /* Fondos y Neutros */
-  --theme-gray-950: #121E61; /* Azul oscuro (#121E61) - Fondo principal */
+  --theme-gray-950: #000B40; /* Azul muy oscuro (#000B40) - Fondo principal */
   --theme-gray-900: #292B33; /* Negro principal (#292B33) - Tarjetas y paneles */
   --theme-gray-800: #515466; /* Gris (#515466) - Bordes y elementos secundarios */
   --theme-gray-700: #6b6f87;

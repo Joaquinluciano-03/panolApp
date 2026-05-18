@@ -2,11 +2,11 @@
 import { clsx } from '@/lib/utils';
 
 const variants = {
-  primary:   'bg-blue-500 hover:bg-blue-400 text-gray-950 font-semibold shadow-lg shadow-blue-500/20',
+  primary:   'bg-blue-500 hover:bg-blue-400 text-white font-semibold shadow-lg shadow-blue-500/20',
   secondary: 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600',
   danger:    'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/20',
   ghost:     'hover:bg-gray-700/50 text-gray-300 hover:text-white',
-  outline:   'border border-blue-500/50 text-blue-400 hover:bg-blue-500/10',
+  outline:   'border border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:text-white',
 };
 
 const sizes = {
