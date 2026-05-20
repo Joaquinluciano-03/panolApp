@@ -10,7 +10,7 @@ import Modal from '@/components/ui/Modal';
 import Input, { Select } from '@/components/ui/Input';
 import { Users, Plus, Pencil, ShieldCheck, Wrench, Trash2, AlertTriangle } from 'lucide-react';
 
-const EMPTY_FORM = { nombre: '', apellido: '', email: '', rol: 'ESTUDIANTE' };
+const EMPTY_FORM = { rol: 'ESTUDIANTE' };
 const PROTECTED_EMAIL = 'panol@donorionevictoria.com.ar';
 
 export default function UsuariosPage() {
@@ -42,21 +42,20 @@ export default function UsuariosPage() {
   const openCreate = () => { setEditUser(null); setForm(EMPTY_FORM); setModalOpen(true); };
   const openEdit = (u) => {
     setEditUser(u);
-    setForm({ nombre: u.NOMBRE, apellido: u.APELLIDO, email: u.EMAIL, rol: u.ROL });
+    setForm({ rol: u.ROL });
     setModalOpen(true);
   };
 
   const handleSave = async () => {
-    if (!form.nombre || !form.apellido || !form.email) {
-      toast('Completá todos los campos obligatorios', 'warning'); return;
-    }
     setSaving(true);
     try {
       if (editUser) {
-        const body = { nombre: form.nombre, apellido: form.apellido, email: form.email, rol: form.rol };
-        const res = await authFetch(`/api/usuarios/${editUser.ID}`, { method: 'PUT', body: JSON.stringify(body) });
+        const res = await authFetch(`/api/usuarios/${editUser.ID}`, {
+          method: 'PUT',
+          body: JSON.stringify({ rol: form.rol }),
+        });
         if (!res.ok) throw new Error((await res.json()).error);
-        toast('Usuario actualizado', 'success');
+        toast('Rol actualizado', 'success');
       }
       setModalOpen(false);
       fetchData();
@@ -187,20 +186,20 @@ export default function UsuariosPage() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal: cambiar rol */}
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={`Editar: ${editUser?.NOMBRE} ${editUser?.APELLIDO}`}
+        title="Cambiar rol de usuario"
         size="sm"
       >
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Nombre *" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
-            <Input label="Apellido *" value={form.apellido} onChange={(e) => setForm({ ...form, apellido: e.target.value })} />
+          {/* Info del usuario (solo lectura) */}
+          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 space-y-1">
+            <p className="text-white font-medium">{editUser?.NOMBRE} {editUser?.APELLIDO}</p>
+            <p className="text-xs text-gray-500">{editUser?.EMAIL}</p>
           </div>
-          <Input label="Email *" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <Select label="Rol *" value={form.rol} onChange={(e) => setForm({ ...form, rol: e.target.value })}>
+          <Select label="Nuevo rol *" value={form.rol} onChange={(e) => setForm({ ...form, rol: e.target.value })}>
             <option value="ESTUDIANTE">Estudiante</option>
             <option value="PAÑOLERO">Pañolero</option>
             <option value="ADMIN">Administrador</option>
@@ -209,7 +208,7 @@ export default function UsuariosPage() {
         <div className="flex gap-3 mt-6">
           <Button variant="secondary" onClick={() => setModalOpen(false)} className="flex-1">Cancelar</Button>
           <Button onClick={handleSave} variant="accent" loading={saving} className="flex-1">
-            Guardar cambios
+            Guardar rol
           </Button>
         </div>
       </Modal>
