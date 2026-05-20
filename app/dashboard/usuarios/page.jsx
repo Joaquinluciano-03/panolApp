@@ -11,6 +11,7 @@ import Input, { Select } from '@/components/ui/Input';
 import { Users, Plus, Pencil, ShieldCheck, Wrench, Trash2, AlertTriangle } from 'lucide-react';
 
 const EMPTY_FORM = { nombre: '', apellido: '', email: '', rol: 'ESTUDIANTE' };
+const PROTECTED_EMAIL = 'panol@donorionevictoria.com.ar';
 
 export default function UsuariosPage() {
   const { authFetch, user } = useAuth();
@@ -151,28 +152,32 @@ export default function UsuariosPage() {
                     </td>
                     <td className="px-5 py-3 text-gray-400 text-xs">{u.ULTIMO_ACCESO || '—'}</td>
                     <td className="px-5 py-3 text-center">
-                      <div className="flex gap-2 justify-center">
-                        <Button variant="ghost" size="xs" onClick={() => openEdit(u)}>
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant={u.ACTIVO === 'TRUE' ? 'ghost' : 'outline'}
-                          size="xs"
-                          onClick={() => toggleActivo(u)}
-                          disabled={u.ID === user?.id && u.ACTIVO === 'TRUE'}
-                        >
-                          {u.ACTIVO === 'TRUE' ? 'Desactivar' : 'Activar'}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="xs"
-                          onClick={() => setConfirmDelete(u)}
-                          disabled={u.ID === user?.id}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
+                      {u.EMAIL === PROTECTED_EMAIL ? (
+                        <span className="text-xs text-gray-600 italic">Sistema</span>
+                      ) : (
+                        <div className="flex gap-2 justify-center">
+                          <Button variant="ghost" size="xs" onClick={() => openEdit(u)}>
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant={u.ACTIVO === 'TRUE' ? 'ghost' : 'outline'}
+                            size="xs"
+                            onClick={() => toggleActivo(u)}
+                            disabled={u.ID === user?.id && u.ACTIVO === 'TRUE'}
+                          >
+                            {u.ACTIVO === 'TRUE' ? 'Desactivar' : 'Activar'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={() => setConfirmDelete(u)}
+                            disabled={u.ID === user?.id}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

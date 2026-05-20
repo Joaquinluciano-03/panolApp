@@ -53,7 +53,7 @@ export async function POST(request) {
 
   const id = generateId();
   const total = parseInt(stock_total, 10) || 0;
-  
+
   // ['ID', 'NOMBRE', 'CATEGORIA', 'STOCK_TOTAL', 'STOCK_EN_USO', 'UNIDAD_MEDIDA', 'DESCRIPCION', 'STOCK_MINIMO', 'ACTIVO', 'MODIFICADO_POR']
   const row = [
     id, nombre, categoria, total, 0,
