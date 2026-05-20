@@ -97,9 +97,20 @@ export default function DashboardPage() {
   // Items que están desactivados por faltantes (ACTIVO=FALSE y tienen STOCK_EN_USO=0)
   const itemsPerdidos  = inventario.filter((i) => i.ACTIVO !== 'TRUE');
 
-  // Top ítems utilizados (para gráfico)
+  // Movimientos del mes actual (formato FECHA: DD/MM/YYYY)
+  const currentDate = new Date();
+  const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const currentYear = String(currentDate.getFullYear());
+  
+  const movMesActual = movimientos.filter((m) => {
+    if (!m.FECHA) return false;
+    const [d, mStr, yStr] = m.FECHA.split('/');
+    return mStr === currentMonth && yStr === currentYear;
+  });
+
+  // Top ítems utilizados (para gráfico, mes actual)
   const itemUsage = {};
-  movimientos.forEach((m) => {
+  movMesActual.forEach((m) => {
     parseItems(m.ITEMS_EGRESADOS).forEach(({ nombre, cantidad }) => {
       itemUsage[nombre] = (itemUsage[nombre] || 0) + cantidad;
     });
@@ -109,14 +120,14 @@ export default function DashboardPage() {
     .slice(0, 10)
     .map(([nombre, total]) => ({ nombre: nombre.length > 12 ? nombre.slice(0, 12) + '…' : nombre, total }));
 
-  // Movimientos por materia
+  // Top 5 materias con más movimientos (mes actual)
   const materiaCounts = {};
-  movimientos.forEach((m) => {
+  movMesActual.forEach((m) => {
     if (m.MATERIA) materiaCounts[m.MATERIA] = (materiaCounts[m.MATERIA] || 0) + 1;
   });
   const materiasData = Object.entries(materiaCounts)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 8)
+    .slice(0, 5)
     .map(([nombre, total]) => ({
       nombre: nombre.length > 15 ? nombre.slice(0, 15) + '…' : nombre, total,
     }));
@@ -325,7 +336,7 @@ export default function DashboardPage() {
           <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6">
             <h2 className="font-semibold text-white mb-4 flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-blue-400" />
-              Ítems más utilizados (Top 10)
+              Ítems más solicitados (Top 10 - Mes actual)
             </h2>
             {topItems.length === 0 ? (
               <p className="text-gray-500 text-sm text-center py-8">Sin datos aún</p>
@@ -352,7 +363,7 @@ export default function DashboardPage() {
           <div className="bg-gray-900 border border-gray-800/50 rounded-2xl p-6">
             <h2 className="font-semibold text-white mb-4 flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-blue-400" />
-              Movimientos por Materia
+              Materias con más movimientos (Top 5 - Mes actual)
             </h2>
             {materiasData.length === 0 ? (
               <p className="text-gray-500 text-sm text-center py-8">Sin datos aún</p>
