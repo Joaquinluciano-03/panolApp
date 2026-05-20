@@ -25,6 +25,10 @@ export default function UsuariosPage() {
   const [form, setForm]         = useState(EMPTY_FORM);
   const [saving, setSaving]     = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [deleteAllModal, setDeleteAllModal] = useState(false);
+  const [deleteAllCode, setDeleteAllCode]   = useState('');
+  const [deleteAllInput, setDeleteAllInput] = useState('');
+  const [deletingAll, setDeletingAll]       = useState(false);
 
   useEffect(() => { if (user && user.rol !== 'ADMIN') router.push('/dashboard'); }, [user, router]);
 
@@ -90,6 +94,29 @@ export default function UsuariosPage() {
     } catch (err) { toast(err.message, 'error'); }
   };
 
+  const openDeleteAllModal = () => {
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    setDeleteAllCode(code);
+    setDeleteAllInput('');
+    setDeleteAllModal(true);
+  };
+
+  const handleDeleteNonAdmins = async () => {
+    if (deleteAllInput !== deleteAllCode) {
+      toast('Código incorrecto', 'error'); return;
+    }
+    setDeletingAll(true);
+    try {
+      const res = await authFetch('/api/usuarios', { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toast(`${data.eliminados} usuario(s) no-admin eliminados`, 'success');
+      setDeleteAllModal(false);
+      fetchData();
+    } catch (err) { toast(err.message, 'error'); }
+    finally { setDeletingAll(false); }
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -99,6 +126,13 @@ export default function UsuariosPage() {
           </h1>
           <p className="text-gray-400 text-sm mt-0.5">{usuarios.length} usuario{usuarios.length !== 1 ? 's' : ''} registrado{usuarios.length !== 1 ? 's' : ''}</p>
         </div>
+        <Button
+          variant="danger"
+          size="sm"
+          onClick={openDeleteAllModal}
+        >
+          <Trash2 className="w-4 h-4" /> Eliminar no-admins
+        </Button>
       </div>
 
       <div className="bg-gray-900 border border-gray-800/50 rounded-2xl overflow-hidden">
@@ -232,6 +266,58 @@ export default function UsuariosPage() {
             <Button variant="secondary" onClick={() => setConfirmDelete(null)} className="flex-1">Cancelar</Button>
             <Button variant="danger" onClick={() => handleDelete(confirmDelete)} className="flex-1">
               <Trash2 className="w-4 h-4" /> Eliminar definitivamente
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal: eliminar todos los no-admins */}
+      <Modal
+        open={deleteAllModal}
+        onClose={() => setDeleteAllModal(false)}
+        title="Eliminar todos los usuarios no-admin"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-sm text-red-300 font-medium">Acción irreversible</p>
+              <p className="text-xs text-red-400/80">
+                Se eliminarán <strong>permanentemente</strong> todos los usuarios con rol
+                <strong> Estudiante</strong> y <strong>Pañolero</strong>. Los administradores y el usuario del sistema no serán afectados.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4">
+            <p className="text-xs text-gray-400 mb-2">Para confirmar, ingresá el siguiente código:</p>
+            <p className="text-2xl font-mono font-bold text-white tracking-widest text-center py-2">
+              {deleteAllCode}
+            </p>
+          </div>
+
+          <input
+            type="text"
+            value={deleteAllInput}
+            onChange={(e) => setDeleteAllInput(e.target.value)}
+            placeholder="Ingresá el código aquí..."
+            maxLength={6}
+            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-center font-mono text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all"
+          />
+
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => setDeleteAllModal(false)} className="flex-1" disabled={deletingAll}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDeleteNonAdmins}
+              loading={deletingAll}
+              disabled={deleteAllInput !== deleteAllCode}
+              className="flex-1"
+            >
+              <Trash2 className="w-4 h-4" /> Confirmar eliminación
             </Button>
           </div>
         </div>
