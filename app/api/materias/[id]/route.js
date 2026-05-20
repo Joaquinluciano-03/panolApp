@@ -1,6 +1,6 @@
 // app/api/materias/[id]/route.js
 import { NextResponse } from 'next/server';
-import { getSheetValues, rowsToObjects, updateRow, SHEETS } from '@/lib/sheets';
+import { getSheetValues, rowsToObjects, updateRow, deleteRow, SHEETS } from '@/lib/sheets';
 import { requireAdmin } from '@/lib/auth';
 
 export async function PUT(request, { params }) {
@@ -26,5 +26,19 @@ export async function PUT(request, { params }) {
   });
 
   await updateRow(SHEETS.MATERIAS, idx, updatedRow);
+  return NextResponse.json({ success: true });
+}
+
+export async function DELETE(request, { params }) {
+  const payload = requireAdmin(request);
+  if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
+  const { id } = await params;
+  const rows = await getSheetValues(SHEETS.MATERIAS);
+  const materias = rowsToObjects(rows);
+  const idx = materias.findIndex((m) => m.ID === id);
+  if (idx === -1) return NextResponse.json({ error: 'Materia no encontrada' }, { status: 404 });
+
+  await deleteRow(SHEETS.MATERIAS, idx);
   return NextResponse.json({ success: true });
 }

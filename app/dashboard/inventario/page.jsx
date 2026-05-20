@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
 import Input, { Select } from '@/components/ui/Input';
-import { Package, Plus, Pencil, Search, AlertTriangle } from 'lucide-react';
+import { Package, Plus, Pencil, Search, AlertTriangle, Trash2 } from 'lucide-react';
 
 const CATEGORIAS = ['Herramienta manual', 'Herramienta eléctrica', 'Material', 'EPP', 'Otro'];
 const EMPTY_FORM = { nombre: '', categoria: '', stock_total: '', unidad_medida: 'unidad', descripcion: '', stock_minimo: '1' };
@@ -46,6 +46,7 @@ export default function InventarioPage() {
   const [saving, setSaving]         = useState(false);
   const [q, setQ]                   = useState('');
   const [catFiltro, setCatFiltro]   = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(null); // item a eliminar
 
   // Permitimos que estudiantes y pañoleros vean el stock, pero solo ADMIN puede editar
 
@@ -111,6 +112,16 @@ export default function InventarioPage() {
       toast(`Ítem ${item.ACTIVO === 'TRUE' ? 'desactivado' : 'activado'}`, 'info');
       fetchData();
     } catch { toast('Error al cambiar estado', 'error'); }
+  };
+
+  const handleDelete = async (item) => {
+    try {
+      const res = await authFetch(`/api/inventario/${item.ID}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error((await res.json()).error);
+      toast(`Ítem "${item.NOMBRE}" eliminado`, 'success');
+      setConfirmDelete(null);
+      fetchData();
+    } catch (err) { toast(err.message, 'error'); }
   };
 
   const filtered = inventario.filter((i) => {
@@ -236,6 +247,14 @@ export default function InventarioPage() {
                             >
                               {item.ACTIVO === 'TRUE' ? 'Desactivar' : 'Activar'}
                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="xs"
+                              onClick={() => setConfirmDelete(item)}
+                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
                         </td>
                       )}
@@ -260,6 +279,30 @@ export default function InventarioPage() {
           <Button onClick={handleSave} variant="accent" loading={saving} className="flex-1">
             {editItem ? 'Guardar cambios' : 'Agregar ítem'}
           </Button>
+        </div>
+      </Modal>
+
+      {/* Modal confirmación eliminación */}
+      <Modal
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        title="Eliminar ítem"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-300">
+              Esta acción es <strong>irreversible</strong>. Se eliminará permanentemente el ítem
+              <strong className="text-white"> "{confirmDelete?.NOMBRE}"</strong> del inventario.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => setConfirmDelete(null)} className="flex-1">Cancelar</Button>
+            <Button variant="danger" onClick={() => handleDelete(confirmDelete)} className="flex-1">
+              <Trash2 className="w-4 h-4" /> Eliminar definitivamente
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>

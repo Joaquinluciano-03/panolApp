@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Input, { Select } from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
-import { BookOpen, Users, Plus, Pencil } from 'lucide-react';
+import { BookOpen, Users, Plus, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 
 export default function MaestrosPage() {
   const { authFetch, user } = useAuth();
@@ -27,6 +27,8 @@ export default function MaestrosPage() {
   const [matForm, setMatForm]     = useState({ nombre: '', curso: '' });
   const [profForm, setProfForm]   = useState({ nombre: '', apellido: '', materias: [] });
   const [saving, setSaving]       = useState(false);
+  const [confirmDeleteMat, setConfirmDeleteMat]   = useState(null);
+  const [confirmDeleteProf, setConfirmDeleteProf] = useState(null);
 
   useEffect(() => { if (user && user.rol !== 'ADMIN') router.push('/dashboard'); }, [user, router]);
 
@@ -113,6 +115,26 @@ export default function MaestrosPage() {
     fetchAll();
   };
 
+  const handleDeleteMat = async (m) => {
+    try {
+      const res = await authFetch(`/api/materias/${m.ID}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error((await res.json()).error);
+      toast(`Materia "${m.NOMBRE}" eliminada`, 'success');
+      setConfirmDeleteMat(null);
+      fetchAll();
+    } catch (err) { toast(err.message, 'error'); }
+  };
+
+  const handleDeleteProf = async (p) => {
+    try {
+      const res = await authFetch(`/api/profesores/${p.ID}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error((await res.json()).error);
+      toast(`Profesor "${p.NOMBRE} ${p.APELLIDO}" eliminado`, 'success');
+      setConfirmDeleteProf(null);
+      fetchAll();
+    } catch (err) { toast(err.message, 'error'); }
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
       <h1 className="text-2xl font-bold text-white">Materias y Profesores</h1>
@@ -158,6 +180,13 @@ export default function MaestrosPage() {
                           <Button variant="ghost" size="xs" onClick={() => toggleMat(m)}>
                             {m.ACTIVO === 'TRUE' ? 'Desactivar' : 'Activar'}
                           </Button>
+                          <Button
+                            variant="ghost" size="xs"
+                            onClick={() => setConfirmDeleteMat(m)}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -201,6 +230,13 @@ export default function MaestrosPage() {
                           <Button variant="ghost" size="xs" onClick={() => openEditProf(p)}><Pencil className="w-3.5 h-3.5" /></Button>
                           <Button variant="ghost" size="xs" onClick={() => toggleProf(p)}>
                             {p.ACTIVO === 'TRUE' ? 'Desactivar' : 'Activar'}
+                          </Button>
+                          <Button
+                            variant="ghost" size="xs"
+                            onClick={() => setConfirmDeleteProf(p)}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </div>
                       </td>
@@ -265,6 +301,44 @@ export default function MaestrosPage() {
         <div className="flex gap-3 mt-4">
           <Button variant="secondary" onClick={() => setProfModal(false)} className="flex-1">Cancelar</Button>
           <Button onClick={saveProf} variant="accent" loading={saving} className="flex-1">{editProf ? 'Guardar' : 'Crear'}</Button>
+        </div>
+      </Modal>
+
+      {/* Modal confirmar eliminar Materia */}
+      <Modal open={!!confirmDeleteMat} onClose={() => setConfirmDeleteMat(null)} title="Eliminar materia" size="sm">
+        <div className="space-y-4">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-300">
+              Esta acción es <strong>irreversible</strong>. Se eliminará la materia
+              <strong className="text-white"> "{confirmDeleteMat?.NOMBRE}"</strong>.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => setConfirmDeleteMat(null)} className="flex-1">Cancelar</Button>
+            <Button variant="danger" onClick={() => handleDeleteMat(confirmDeleteMat)} className="flex-1">
+              <Trash2 className="w-4 h-4" /> Eliminar
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal confirmar eliminar Profesor */}
+      <Modal open={!!confirmDeleteProf} onClose={() => setConfirmDeleteProf(null)} title="Eliminar profesor" size="sm">
+        <div className="space-y-4">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-300">
+              Esta acción es <strong>irreversible</strong>. Se eliminará el profesor
+              <strong className="text-white"> "{confirmDeleteProf?.NOMBRE} {confirmDeleteProf?.APELLIDO}"</strong>.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => setConfirmDeleteProf(null)} className="flex-1">Cancelar</Button>
+            <Button variant="danger" onClick={() => handleDeleteProf(confirmDeleteProf)} className="flex-1">
+              <Trash2 className="w-4 h-4" /> Eliminar
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>

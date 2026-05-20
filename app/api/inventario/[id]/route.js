@@ -1,6 +1,6 @@
 // app/api/inventario/[id]/route.js
 import { NextResponse } from 'next/server';
-import { getSheetValues, rowsToObjects, updateRow, appendRow, SHEETS, nowAR, formatDate, formatTime, generateId } from '@/lib/sheets';
+import { getSheetValues, rowsToObjects, updateRow, deleteRow, appendRow, SHEETS, nowAR, formatDate, formatTime, generateId } from '@/lib/sheets';
 import { requireAdmin } from '@/lib/auth';
 
 export async function PUT(request, { params }) {
@@ -136,5 +136,24 @@ export async function PATCH(request, { params }) {
     await appendRow(SHEETS.AUDITORIA_STOCK, auditoriaRow);
   }
 
+  return NextResponse.json({ success: true });
+}
+
+export async function DELETE(request, { params }) {
+  const payload = requireAdmin(request);
+  if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
+  const { id } = await params;
+  const rows = await getSheetValues(SHEETS.INVENTARIO);
+  const inventario = rowsToObjects(rows);
+  const idx = inventario.findIndex((i) => i.ID === id);
+  if (idx === -1) return NextResponse.json({ error: 'Ítem no encontrado' }, { status: 404 });
+
+  const item = inventario[idx];
+  if (parseInt(item.STOCK_EN_USO || 0) > 0) {
+    return NextResponse.json({ error: 'No se puede eliminar un ítem con unidades en uso actualmente' }, { status: 400 });
+  }
+
+  await deleteRow(SHEETS.INVENTARIO, idx);
   return NextResponse.json({ success: true });
 }

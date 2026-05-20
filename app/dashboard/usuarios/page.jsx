@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
 import Input, { Select } from '@/components/ui/Input';
-import { Users, Plus, Pencil, ShieldCheck, Wrench } from 'lucide-react';
+import { Users, Plus, Pencil, ShieldCheck, Wrench, Trash2, AlertTriangle } from 'lucide-react';
 
 const EMPTY_FORM = { nombre: '', apellido: '', email: '', rol: 'ESTUDIANTE' };
 
@@ -23,6 +23,7 @@ export default function UsuariosPage() {
   const [editUser, setEditUser] = useState(null);
   const [form, setForm]         = useState(EMPTY_FORM);
   const [saving, setSaving]     = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   useEffect(() => { if (user && user.rol !== 'ADMIN') router.push('/dashboard'); }, [user, router]);
 
@@ -77,6 +78,16 @@ export default function UsuariosPage() {
       toast(`Usuario ${u.ACTIVO === 'TRUE' ? 'desactivado' : 'activado'}`, 'info');
       fetchData();
     } catch { toast('Error al cambiar estado', 'error'); }
+  };
+
+  const handleDelete = async (u) => {
+    try {
+      const res = await authFetch(`/api/usuarios/${u.ID}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error((await res.json()).error);
+      toast(`Usuario "${u.NOMBRE} ${u.APELLIDO}" eliminado`, 'success');
+      setConfirmDelete(null);
+      fetchData();
+    } catch (err) { toast(err.message, 'error'); }
   };
 
   return (
@@ -152,6 +163,15 @@ export default function UsuariosPage() {
                         >
                           {u.ACTIVO === 'TRUE' ? 'Desactivar' : 'Activar'}
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          onClick={() => setConfirmDelete(u)}
+                          disabled={u.ID === user?.id}
+                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -186,6 +206,30 @@ export default function UsuariosPage() {
           <Button onClick={handleSave} variant="accent" loading={saving} className="flex-1">
             Guardar cambios
           </Button>
+        </div>
+      </Modal>
+
+      {/* Modal confirmación eliminación */}
+      <Modal
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        title="Eliminar usuario"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-300">
+              Esta acción es <strong>irreversible</strong>. Se eliminará permanentemente el usuario
+              <strong className="text-white"> "{confirmDelete?.NOMBRE} {confirmDelete?.APELLIDO}"</strong>.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => setConfirmDelete(null)} className="flex-1">Cancelar</Button>
+            <Button variant="danger" onClick={() => handleDelete(confirmDelete)} className="flex-1">
+              <Trash2 className="w-4 h-4" /> Eliminar definitivamente
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>
