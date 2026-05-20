@@ -151,7 +151,7 @@ export default function DashboardPage() {
             <RefreshCw className="w-4 h-4" /> Actualizar
           </Button>
           <Link href="/dashboard/egreso">
-            <Button size="lg" className="gap-2">
+            <Button variant="accent" size="lg" className="gap-2">
               <PackagePlus className="w-5 h-5" /> Nuevo Egreso
             </Button>
           </Link>

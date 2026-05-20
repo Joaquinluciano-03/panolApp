@@ -183,7 +183,7 @@ export default function UsuariosPage() {
         </div>
         <div className="flex gap-3 mt-6">
           <Button variant="secondary" onClick={() => setModalOpen(false)} className="flex-1">Cancelar</Button>
-          <Button onClick={handleSave} loading={saving} className="flex-1">
+          <Button onClick={handleSave} variant="accent" loading={saving} className="flex-1">
             Guardar cambios
           </Button>
         </div>

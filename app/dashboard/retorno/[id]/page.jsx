@@ -489,7 +489,7 @@ export default function RetornoPage() {
             />
           </div>
 
-          <Button type="submit" size="xl" loading={submitting} className="w-full">
+          <Button type="submit" variant="accent" size="xl" loading={submitting} className="w-full">
             <CheckCircle className="w-5 h-5" />
             {yaIncompleto ? 'Confirmar Devolución' : 'Confirmar Retorno'}
           </Button>

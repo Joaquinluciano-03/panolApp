@@ -232,7 +232,7 @@ export default function MaestrosPage() {
         </div>
         <div className="flex gap-3 mt-4">
           <Button variant="secondary" onClick={() => setMatModal(false)} className="flex-1">Cancelar</Button>
-          <Button onClick={saveMat} loading={saving} className="flex-1">{editMat ? 'Guardar' : 'Crear'}</Button>
+          <Button onClick={saveMat} variant="accent" loading={saving} className="flex-1">{editMat ? 'Guardar' : 'Crear'}</Button>
         </div>
       </Modal>
 
@@ -264,7 +264,7 @@ export default function MaestrosPage() {
         </div>
         <div className="flex gap-3 mt-4">
           <Button variant="secondary" onClick={() => setProfModal(false)} className="flex-1">Cancelar</Button>
-          <Button onClick={saveProf} loading={saving} className="flex-1">{editProf ? 'Guardar' : 'Crear'}</Button>
+          <Button onClick={saveProf} variant="accent" loading={saving} className="flex-1">{editProf ? 'Guardar' : 'Crear'}</Button>
         </div>
       </Modal>
     </div>

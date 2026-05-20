@@ -3,6 +3,7 @@ import { clsx } from '@/lib/utils';
 
 const variants = {
   primary:   'bg-blue-500 hover:bg-blue-400 text-white font-semibold shadow-lg shadow-blue-500/20',
+  accent:    'bg-amber-600 hover:bg-amber-500 text-white font-semibold shadow-lg shadow-amber-600/20',
   secondary: 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600',
   danger:    'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/20',
   ghost:     'hover:bg-gray-700/50 text-gray-300 hover:text-white',

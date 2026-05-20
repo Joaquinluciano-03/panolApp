@@ -134,7 +134,7 @@ export default function InventarioPage() {
           <p className="text-gray-400 text-sm mt-0.5">{inventario.length} ítems registrados</p>
         </div>
         {user?.rol === 'ADMIN' && (
-          <Button onClick={openCreate}><Plus className="w-4 h-4" /> Agregar ítem</Button>
+          <Button onClick={openCreate} variant="accent"><Plus className="w-4 h-4" /> Agregar ítem</Button>
         )}
       </div>
 
@@ -257,7 +257,7 @@ export default function InventarioPage() {
         <ItemForm form={form} setForm={setForm} />
         <div className="flex gap-3 mt-6">
           <Button variant="secondary" onClick={() => setModalOpen(false)} className="flex-1">Cancelar</Button>
-          <Button onClick={handleSave} loading={saving} className="flex-1">
+          <Button onClick={handleSave} variant="accent" loading={saving} className="flex-1">
             {editItem ? 'Guardar cambios' : 'Agregar ítem'}
           </Button>
         </div>

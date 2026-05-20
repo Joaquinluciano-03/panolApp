@@ -396,6 +396,7 @@ export default function EgresoPage() {
         <Button
           type="submit"
           size="xl"
+          variant="accent"
           loading={loading}
           disabled={hasErrors || validItems.length === 0}
           className="w-full"
