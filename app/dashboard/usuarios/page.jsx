@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
 import Input, { Select } from '@/components/ui/Input';
-import { Users, Plus, Pencil, ShieldCheck, Wrench, Trash2, AlertTriangle } from 'lucide-react';
+import { Users, Plus, Pencil, ShieldCheck, Wrench, Trash2, AlertTriangle, Search } from 'lucide-react';
 
 const EMPTY_FORM = { rol: 'ESTUDIANTE' };
 const PROTECTED_EMAIL = 'panol@donorionevictoria.com.ar';
@@ -29,6 +29,8 @@ export default function UsuariosPage() {
   const [deleteAllCode, setDeleteAllCode]   = useState('');
   const [deleteAllInput, setDeleteAllInput] = useState('');
   const [deletingAll, setDeletingAll]       = useState(false);
+  const [q, setQ]           = useState('');
+  const [rolFiltro, setRolFiltro] = useState('');
 
   useEffect(() => { if (user && user.rol !== 'ADMIN') router.push('/dashboard'); }, [user, router]);
 
@@ -117,6 +119,16 @@ export default function UsuariosPage() {
     finally { setDeletingAll(false); }
   };
 
+  const filtered = usuarios.filter((u) => {
+    const lq = q.toLowerCase();
+    const matchQ = !q ||
+      u.NOMBRE?.toLowerCase().includes(lq) ||
+      u.APELLIDO?.toLowerCase().includes(lq) ||
+      u.EMAIL?.toLowerCase().includes(lq);
+    const matchRol = !rolFiltro || u.ROL === rolFiltro;
+    return matchQ && matchRol;
+  });
+
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -135,10 +147,41 @@ export default function UsuariosPage() {
         </Button>
       </div>
 
+      {/* Buscador y filtros */}
+      <div className="flex gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-48">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, apellido o email..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-xl pl-9 pr-3 py-2 text-white text-sm
+              placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+          />
+        </div>
+        <select
+          value={rolFiltro}
+          onChange={(e) => setRolFiltro(e.target.value)}
+          className="bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm
+            focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+        >
+          <option value="">Todos los roles</option>
+          <option value="ADMIN">Administrador</option>
+          <option value="PAÑOLERO">Pañolero</option>
+          <option value="ESTUDIANTE">Estudiante</option>
+        </select>
+      </div>
+
       <div className="bg-gray-900 border border-gray-800/50 rounded-2xl overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-16">
             <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-12 flex flex-col items-center gap-2 text-gray-500">
+            <Search className="w-8 h-8 opacity-40" />
+            <p className="text-sm">No se encontraron usuarios con ese filtro</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -154,7 +197,7 @@ export default function UsuariosPage() {
                 </tr>
               </thead>
               <tbody>
-                {usuarios.map((u) => (
+                {filtered.map((u) => (
                   <tr key={u.ID} className={u.ACTIVO !== 'TRUE' ? 'opacity-50' : ''}>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
