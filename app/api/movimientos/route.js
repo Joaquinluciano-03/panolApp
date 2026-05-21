@@ -17,21 +17,22 @@ export async function GET(request) {
   const alumno = searchParams.get('alumno');
   const q = searchParams.get('q');
 
-  // Ordenar por id (los IDs empiezan con Date.now(), son cronológicos)
+  // Construir toda la query antes de ejecutarla
   let query = supabase.from('movimientos').select(
-    'id, id_planilla, fecha, hora_egreso, hora_ingreso, alumno_responsable, curso, materia, profesor, items_egresados, items_ingresados, diferencia, estado, panolero, observaciones, modificado_por'
-  ).order('id', { ascending: false });
+    'id, id_planilla, fecha, hora_egreso, hora_ingreso, alumno_responsable, curso, materia, profesor, items_egresados, items_ingresados, diferencia, estado, panolero, observaciones, modificado_por, created_at'
+  ).order('created_at', { ascending: false });
 
-  // Filtro "solo hoy" — la columna fecha es DD/MM/YYYY, hacemos eq exacto
+  // Filtro "solo hoy" — fecha exacta en string DD/MM/YYYY
   if (payload.rol === 'PAÑOLERO' || solo_hoy === 'true') {
     query = query.eq('fecha', formatDate(nowAR()));
   }
 
-  // Filtros SQL
-  if (estado) {
-    const estados = estado.split(',').map(s => s.trim());
-    query = query.in('estado', estados);
-  }
+  // Filtro rango de fechas usando created_at (columna real con índice)
+  if (fecha_desde) query = query.gte('created_at', new Date(fecha_desde + 'T00:00:00').toISOString());
+  if (fecha_hasta) query = query.lte('created_at', new Date(fecha_hasta + 'T23:59:59').toISOString());
+
+  // Resto de filtros en SQL
+  if (estado) query = query.in('estado', estado.split(',').map(s => s.trim()));
   if (materia) query = query.ilike('materia', `%${materia}%`);
   if (profesor) query = query.ilike('profesor', `%${profesor}%`);
   if (alumno) query = query.ilike('alumno_responsable', `%${alumno}%`);
@@ -41,28 +42,11 @@ export async function GET(request) {
     );
   }
 
+  // Ejecutar UNA sola vez con todos los filtros aplicados
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  let result = mapToUpper(data);
-
-  // Filtro de rango de fecha en JS (fecha está como DD/MM/YYYY)
-  if (fecha_desde) {
-    const desde = new Date(fecha_desde);
-    result = result.filter((m) => {
-      const [d, mo, y] = (m.FECHA || '').split('/');
-      return new Date(+y, +mo - 1, +d) >= desde;
-    });
-  }
-  if (fecha_hasta) {
-    const hasta = new Date(fecha_hasta);
-    result = result.filter((m) => {
-      const [d, mo, y] = (m.FECHA || '').split('/');
-      return new Date(+y, +mo - 1, +d) <= hasta;
-    });
-  }
-
-  return NextResponse.json({ movimientos: result });
+  return NextResponse.json({ movimientos: mapToUpper(data) });
 }
 
 export async function POST(request) {
@@ -94,6 +78,7 @@ export async function POST(request) {
       }
     }
 
+    // Actualizar stock con re-lectura fresca (anti race-condition)
     for (const item of items) {
       const invItem = invItems.find(i => i.nombre === item.nombre);
       const { data: fresh } = await supabase.from('inventario').select('stock_en_uso').eq('id', invItem.id).single();
@@ -104,12 +89,12 @@ export async function POST(request) {
     const now = nowAR();
     const id = generateId();
     const idPlanilla = `P-${Date.now().toString(36).toUpperCase()}`;
-    const itemsStr = serializeItems(items);
 
     const { error: movErr } = await supabase.from('movimientos').insert({
       id, id_planilla: idPlanilla, fecha: formatDate(now), hora_egreso: formatTime(now),
-      alumno_responsable: alumno, curso, materia, profesor, items_egresados: itemsStr,
-      estado: 'PENDIENTE', panolero: `${payload.nombre} ${payload.apellido}`,
+      alumno_responsable: alumno, curso, materia, profesor,
+      items_egresados: serializeItems(items), estado: 'PENDIENTE',
+      panolero: `${payload.nombre} ${payload.apellido}`,
       observaciones: observaciones || '', modificado_por: payload.email
     });
     if (movErr) throw movErr;
