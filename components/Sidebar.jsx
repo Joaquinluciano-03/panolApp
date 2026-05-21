@@ -9,6 +9,8 @@ import {
   Menu, FileBarChart, AlertTriangle
 } from 'lucide-react';
 import { clsx } from '@/lib/utils';
+import HelpModal from '@/components/HelpModal';
+import { useState } from 'react';
 
 const adminNav = [
   { href: '/dashboard',           label: 'Dashboard',      icon: LayoutDashboard },
@@ -36,10 +38,12 @@ const estudianteNav = [
 export default function Sidebar({ collapsed, setCollapsed }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
+  const [showHelp, setShowHelp] = useState(false);
   const nav = user?.rol === 'ADMIN' ? adminNav : (user?.rol === 'PAÑOLERO' ? pañoleroNav : estudianteNav);
 
   return (
     <>
+      <HelpModal open={showHelp} onClose={() => setShowHelp(false)} />
       {/* Overlay móvil */}
       {!collapsed && (
         <div
@@ -110,6 +114,14 @@ export default function Sidebar({ collapsed, setCollapsed }) {
               </p>
             </div>
           )}
+          <button
+            onClick={() => setShowHelp(true)}
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-white font-medium
+              hover:bg-white/10 transition-all duration-200 mb-1 border border-white/20 shadow-[0_0_10px_rgba(255,255,255,0.1)] hover:shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+          >
+            <HelpCircle className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && <span className="text-sm">Ayuda / Manual</span>}
+          </button>
           <button
             onClick={logout}
             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-gray-400
