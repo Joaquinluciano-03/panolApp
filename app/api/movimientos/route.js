@@ -10,38 +10,24 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const estado = searchParams.get('estado');
   const solo_hoy = searchParams.get('solo_hoy');
-  const fecha_desde = searchParams.get('fecha_desde');  // formato YYYY-MM-DD
-  const fecha_hasta = searchParams.get('fecha_hasta');  // formato YYYY-MM-DD
+  const fecha_desde = searchParams.get('fecha_desde');  // YYYY-MM-DD
+  const fecha_hasta = searchParams.get('fecha_hasta');  // YYYY-MM-DD
   const materia = searchParams.get('materia');
   const profesor = searchParams.get('profesor');
   const alumno = searchParams.get('alumno');
   const q = searchParams.get('q');
 
-  // Seleccionar solo columnas necesarias, ordenado en BD (el host no toca los datos)
+  // Ordenar por id (los IDs empiezan con Date.now(), son cronológicos)
   let query = supabase.from('movimientos').select(
-    'id, id_planilla, fecha, hora_egreso, hora_ingreso, alumno_responsable, curso, materia, profesor, items_egresados, items_ingresados, diferencia, estado, panolero, observaciones, modificado_por, timestamp'
-  ).order('timestamp', { ascending: false });
+    'id, id_planilla, fecha, hora_egreso, hora_ingreso, alumno_responsable, curso, materia, profesor, items_egresados, items_ingresados, diferencia, estado, panolero, observaciones, modificado_por'
+  ).order('id', { ascending: false });
 
-  // ── Filtros 100% en SQL ──────────────────────────────────────────────────────
-
-  // Filtro de fecha por día actual — usa la columna timestamp (nativa SQL DATE)
+  // Filtro "solo hoy" — la columna fecha es DD/MM/YYYY, hacemos eq exacto
   if (payload.rol === 'PAÑOLERO' || solo_hoy === 'true') {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
-    query = query.gte('timestamp', todayStart.toISOString()).lte('timestamp', todayEnd.toISOString());
+    query = query.eq('fecha', formatDate(nowAR()));
   }
 
-  // Filtro de rango de fechas — usa timestamp directamente, sin procesamiento JS
-  if (fecha_desde) {
-    query = query.gte('timestamp', new Date(fecha_desde + 'T00:00:00').toISOString());
-  }
-  if (fecha_hasta) {
-    query = query.lte('timestamp', new Date(fecha_hasta + 'T23:59:59').toISOString());
-  }
-
-  // Filtros de estado, materia, profesor, alumno — todos en SQL
+  // Filtros SQL
   if (estado) {
     const estados = estado.split(',').map(s => s.trim());
     query = query.in('estado', estados);
@@ -49,8 +35,6 @@ export async function GET(request) {
   if (materia) query = query.ilike('materia', `%${materia}%`);
   if (profesor) query = query.ilike('profesor', `%${profesor}%`);
   if (alumno) query = query.ilike('alumno_responsable', `%${alumno}%`);
-
-  // Búsqueda general de texto — SQL, no JS
   if (q) {
     query = query.or(
       `alumno_responsable.ilike.%${q}%,profesor.ilike.%${q}%,materia.ilike.%${q}%,id_planilla.ilike.%${q}%`
@@ -60,7 +44,25 @@ export async function GET(request) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ movimientos: mapToUpper(data) });
+  let result = mapToUpper(data);
+
+  // Filtro de rango de fecha en JS (fecha está como DD/MM/YYYY)
+  if (fecha_desde) {
+    const desde = new Date(fecha_desde);
+    result = result.filter((m) => {
+      const [d, mo, y] = (m.FECHA || '').split('/');
+      return new Date(+y, +mo - 1, +d) >= desde;
+    });
+  }
+  if (fecha_hasta) {
+    const hasta = new Date(fecha_hasta);
+    result = result.filter((m) => {
+      const [d, mo, y] = (m.FECHA || '').split('/');
+      return new Date(+y, +mo - 1, +d) <= hasta;
+    });
+  }
+
+  return NextResponse.json({ movimientos: result });
 }
 
 export async function POST(request) {
@@ -75,7 +77,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Campos obligatorios faltantes' }, { status: 400 });
     }
 
-    // Consulta optimizada: solo traer los campos necesarios de los ítems requeridos
     const itemNames = items.map(i => i.nombre);
     const { data: invItems, error: invErr } = await supabase
       .from('inventario')
@@ -93,7 +94,6 @@ export async function POST(request) {
       }
     }
 
-    // Actualizar inventario — re-lectura fresca por item para evitar race conditions
     for (const item of items) {
       const invItem = invItems.find(i => i.nombre === item.nombre);
       const { data: fresh } = await supabase.from('inventario').select('stock_en_uso').eq('id', invItem.id).single();
@@ -107,19 +107,10 @@ export async function POST(request) {
     const itemsStr = serializeItems(items);
 
     const { error: movErr } = await supabase.from('movimientos').insert({
-      id,
-      id_planilla: idPlanilla,
-      fecha: formatDate(now),
-      hora_egreso: formatTime(now),
-      alumno_responsable: alumno,
-      curso,
-      materia,
-      profesor,
-      items_egresados: itemsStr,
-      estado: 'PENDIENTE',
-      panolero: `${payload.nombre} ${payload.apellido}`,
-      observaciones: observaciones || '',
-      modificado_por: payload.email
+      id, id_planilla: idPlanilla, fecha: formatDate(now), hora_egreso: formatTime(now),
+      alumno_responsable: alumno, curso, materia, profesor, items_egresados: itemsStr,
+      estado: 'PENDIENTE', panolero: `${payload.nombre} ${payload.apellido}`,
+      observaciones: observaciones || '', modificado_por: payload.email
     });
     if (movErr) throw movErr;
 
