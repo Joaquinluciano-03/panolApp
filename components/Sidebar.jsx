@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard, PackagePlus, Clock, History,
   Package, BookOpen, Users, LogOut, ChevronLeft,
-  Menu, FileBarChart, AlertTriangle
+  Menu, FileBarChart, AlertTriangle, HelpCircle
 } from 'lucide-react';
 import { clsx } from '@/lib/utils';
 import HelpModal from '@/components/HelpModal';
