@@ -1,27 +1,19 @@
-// app/api/movimientos/[id]/route.js
 import { NextResponse } from 'next/server';
-import {
-  getSheetValues, rowsToObjects, updateRow, SHEETS,
-  nowAR, formatDate, formatTime,
-} from '@/lib/sheets';
+import { supabase } from '@/lib/supabase';
 import { requireAuth } from '@/lib/auth';
-import { parseItems, calcDiferencia } from '@/lib/utils';
+import { parseItems, calcDiferencia, nowAR, formatTime, toUpperKeys } from '@/lib/utils';
 
-/** GET /api/movimientos/[id] — obtener un movimiento por ID */
 export async function GET(request, { params }) {
   const payload = requireAuth(request);
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const { id } = await params;
-  const rows = await getSheetValues(SHEETS.MOVIMIENTOS);
-  const movimientos = rowsToObjects(rows);
-  const mov = movimientos.find((m) => m.ID === id || m.ID_PLANILLA === id);
-  if (!mov) return NextResponse.json({ error: 'Movimiento no encontrado' }, { status: 404 });
+  const { data: mov, error } = await supabase.from('movimientos').select('*').or(`id.eq.${id},id_planilla.eq.${id}`).single();
+  if (error || !mov) return NextResponse.json({ error: 'Movimiento no encontrado' }, { status: 404 });
 
-  return NextResponse.json({ movimiento: mov });
+  return NextResponse.json({ movimiento: toUpperKeys(mov) });
 }
 
-/** PUT /api/movimientos/[id] — registrar retorno */
 export async function PUT(request, { params }) {
   const payload = requireAuth(request);
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
@@ -30,26 +22,19 @@ export async function PUT(request, { params }) {
   try {
     const body = await request.json();
     const { itemsIngresados, observaciones } = body;
-    // itemsIngresados: [{nombre, cantidad}]
 
-    const rows = await getSheetValues(SHEETS.MOVIMIENTOS);
-    const movimientos = rowsToObjects(rows);
-    const idx = movimientos.findIndex((m) => m.ID === id || m.ID_PLANILLA === id);
+    const { data: mov, error: fetchErr } = await supabase.from('movimientos').select('*').or(`id.eq.${id},id_planilla.eq.${id}`).single();
+    if (fetchErr || !mov) return NextResponse.json({ error: 'Movimiento no encontrado' }, { status: 404 });
 
-    if (idx === -1) return NextResponse.json({ error: 'Movimiento no encontrado' }, { status: 404 });
-
-    const mov = movimientos[idx];
-    if (mov.ESTADO !== 'PENDIENTE' && mov.ESTADO !== 'INCOMPLETO') {
+    if (mov.estado !== 'PENDIENTE' && mov.estado !== 'INCOMPLETO') {
       return NextResponse.json({ error: 'Este movimiento ya está completado o cerrado' }, { status: 400 });
     }
 
-    // Combinar los ítems devueltos previamente con los nuevos si ya estaba INCOMPLETO
-    const previousIngresados = parseItems(mov.ITEMS_INGRESADOS || '');
+    const previousIngresados = parseItems(mov.items_ingresados || '');
     const mapIngresados = {};
     previousIngresados.forEach((i) => { mapIngresados[i.nombre] = i.cantidad; });
 
-    // Validar que no se devuelva más de lo que salió (sumando lo previo)
-    const egresados = parseItems(mov.ITEMS_EGRESADOS);
+    const egresados = parseItems(mov.items_egresados);
     for (const item of itemsIngresados) {
       const eg = egresados.find((e) => e.nombre === item.nombre);
       if (!eg) continue;
@@ -58,57 +43,35 @@ export async function PUT(request, { params }) {
       const totalIngresado = prevQty + item.cantidad;
 
       if (totalIngresado > eg.cantidad) {
-        return NextResponse.json({
-          error: `No se puede retornar más unidades de las egresadas para ${item.nombre}`,
-        }, { status: 400 });
+        return NextResponse.json({ error: `No se puede retornar más unidades de las egresadas para ${item.nombre}` }, { status: 400 });
       }
-      
-      // Actualizar el mapa combinado
       mapIngresados[item.nombre] = totalIngresado;
     }
 
     const now = nowAR();
-    // Construir nuevo string de items ingresados
-    const itemsIngStr = Object.entries(mapIngresados)
-      .map(([nombre, cant]) => `${nombre}:${cant}`)
-      .join(',');
+    const itemsIngStr = Object.entries(mapIngresados).map(([nombre, cant]) => `${nombre}:${cant}`).join(',');
+    const diferencia = calcDiferencia(mov.items_egresados, itemsIngStr);
+    const estado = diferencia.length > 0 ? 'INCOMPLETO' : 'COMPLETADO';
 
-    const diferencia = calcDiferencia(mov.ITEMS_EGRESADOS, itemsIngStr);
-
-    // Determinar estado
-    const tieneDiff = diferencia.length > 0;
-    const estado = tieneDiff ? 'INCOMPLETO' : 'COMPLETADO';
-
-    // Actualizar inventario — devolver stock
-    const invRows = await getSheetValues(SHEETS.INVENTARIO);
-    const inventario = rowsToObjects(invRows);
-
+    // Actualizar inventario
+    const itemNames = itemsIngresados.map(i => i.nombre);
+    const { data: invItems } = await supabase.from('inventario').select('*').in('nombre', itemNames);
+    
     for (const item of itemsIngresados) {
-      const invIdx = inventario.findIndex((i) => i.NOMBRE === item.nombre);
-      if (invIdx === -1) continue;
-      const invItem = inventario[invIdx];
-      const newEnUso = Math.max(0, parseInt(invItem.STOCK_EN_USO, 10) - item.cantidad);
-      const headers = invRows[0];
-      const updatedRow = headers.map((h) => {
-        if (h === 'MODIFICADO_POR') return payload.email;
-        if (h === 'STOCK_EN_USO') return String(newEnUso);
-        return invItem[h] ?? '';
-      });
-      await updateRow(SHEETS.INVENTARIO, invIdx, updatedRow);
+      const invItem = invItems?.find(i => i.nombre === item.nombre);
+      if (!invItem) continue;
+      const newEnUso = Math.max(0, parseInt(invItem.stock_en_uso, 10) - item.cantidad);
+      await supabase.from('inventario').update({ stock_en_uso: newEnUso, modificado_por: payload.email }).eq('id', invItem.id);
     }
 
-    // Actualizar movimiento
-    const headers = rows[0];
-    const updatedMov = headers.map((h) => {
-      if (h === 'MODIFICADO_POR') return payload.email;
-      if (h === 'HORA_INGRESO') return formatTime(now);
-      if (h === 'ITEMS_INGRESADOS') return itemsIngStr;
-      if (h === 'DIFERENCIA') return diferencia;
-      if (h === 'ESTADO') return estado;
-      if (h === 'OBSERVACIONES') return observaciones || mov.OBSERVACIONES || '';
-      return mov[h] ?? '';
-    });
-    await updateRow(SHEETS.MOVIMIENTOS, idx, updatedMov);
+    await supabase.from('movimientos').update({
+      hora_ingreso: formatTime(now),
+      items_ingresados: itemsIngStr,
+      diferencia,
+      estado,
+      observaciones: observaciones || mov.observaciones || '',
+      modificado_por: payload.email
+    }).eq('id', mov.id);
 
     return NextResponse.json({ success: true, estado, diferencia });
   } catch (err) {
@@ -117,7 +80,6 @@ export async function PUT(request, { params }) {
   }
 }
 
-/** PATCH /api/movimientos/[id] — agregar observaciones */
 export async function PATCH(request, { params }) {
   const payload = requireAuth(request);
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
@@ -125,19 +87,11 @@ export async function PATCH(request, { params }) {
   const { id } = await params;
   const { observaciones } = await request.json();
 
-  const rows = await getSheetValues(SHEETS.MOVIMIENTOS);
-  const movimientos = rowsToObjects(rows);
-  const idx = movimientos.findIndex((m) => m.ID === id);
-  if (idx === -1) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
-
-  const mov = movimientos[idx];
-  const headers = rows[0];
-  const updatedMov = headers.map((h) => {
-    if (h === 'MODIFICADO_POR') return payload.email;
-    if (h === 'OBSERVACIONES') return observaciones || '';
-    return mov[h] ?? '';
-  });
-  await updateRow(SHEETS.MOVIMIENTOS, idx, updatedMov);
-
+  const { error } = await supabase.from('movimientos').update({ 
+    observaciones: observaciones || '', 
+    modificado_por: payload.email 
+  }).eq('id', id);
+  
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
 }

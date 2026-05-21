@@ -1,11 +1,8 @@
-// app/api/auth/login/route.js
 import { NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
-import {
-  getSheetValues, rowsToObjects, appendRow, updateRow, nowAR, formatDate, formatTime,
-  generateId, SHEETS, checkAndInitDb, cleanOldMovimientos,
-} from '@/lib/sheets';
+import { supabase } from '@/lib/supabase';
 import { signToken } from '@/lib/auth';
+import { nowAR, formatDate, formatTime, generateId } from '@/lib/utils';
 
 const client = new OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
 
@@ -27,75 +24,62 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Solo se permiten correos @donorionevictoria.com.ar' }, { status: 403 });
     }
 
-    // Inicializar base de datos si está vacía
-    await checkAndInitDb();
-    
-    // Limpieza automática de registros antiguos en segundo plano
-    cleanOldMovimientos().catch(err => console.error('Error al limpiar db:', err));
-
-    const rows = await getSheetValues(SHEETS.USUARIOS);
-    const usuarios = rowsToObjects(rows);
-    let usuario = usuarios.find((u) => u.EMAIL?.toLowerCase() === email.toLowerCase());
+    const { data: usuario, error: fetchErr } = await supabase.from('usuarios').select('*').ilike('email', email).maybeSingle();
+    if (fetchErr) throw fetchErr;
 
     const isPanolAdmin = email.toLowerCase() === 'panol@donorionevictoria.com.ar';
-    const assignedRole = isPanolAdmin ? 'ADMIN' : (usuario ? usuario.ROL : 'ESTUDIANTE');
+    const assignedRole = isPanolAdmin ? 'ADMIN' : (usuario ? usuario.rol : 'ESTUDIANTE');
     const now = nowAR();
+    const ultimo_acceso = `${formatDate(now)} ${formatTime(now)}`;
+
+    let finalUser = usuario;
 
     if (!usuario) {
-      // Create new user
-      usuario = {
-        ID: generateId(),
-        NOMBRE: given_name || '',
-        APELLIDO: family_name || '',
-        EMAIL: email,
-        ROL: assignedRole,
-        ACTIVO: 'TRUE',
-        FECHA_CREACION: formatDate(now),
-        ULTIMO_ACCESO: `${formatDate(now)} ${formatTime(now)}`,
-        MODIFICADO_POR: email,
+      finalUser = {
+        id: generateId(),
+        nombre: given_name || '',
+        apellido: family_name || '',
+        email,
+        rol: assignedRole,
+        activo: 'TRUE',
+        fecha_creacion: formatDate(now),
+        ultimo_acceso,
+        modificado_por: email,
       };
-      const newRow = [
-        usuario.ID, usuario.NOMBRE, usuario.APELLIDO, usuario.EMAIL,
-        usuario.ROL, usuario.ACTIVO, usuario.FECHA_CREACION, usuario.ULTIMO_ACCESO, usuario.MODIFICADO_POR
-      ];
-      await appendRow(SHEETS.USUARIOS, newRow);
+      const { error: insertErr } = await supabase.from('usuarios').insert(finalUser);
+      if (insertErr) throw insertErr;
     } else {
-      if (usuario.ACTIVO !== 'TRUE') {
+      if (usuario.activo !== 'TRUE') {
         return NextResponse.json({ error: 'Usuario inactivo' }, { status: 403 });
       }
       
-      // Update ULTIMO_ACCESO and enforce role
-      usuario.ROL = assignedRole;
-      usuario.ULTIMO_ACCESO = `${formatDate(now)} ${formatTime(now)}`;
-      usuario.MODIFICADO_POR = email;
+      finalUser.rol = assignedRole;
+      finalUser.ultimo_acceso = ultimo_acceso;
       
-      const dataIndex = usuarios.findIndex((u) => u.ID === usuario.ID);
-      const allCols = rows[0]; // headers
-      const updatedRow = allCols.map((col) => {
-        if (col === 'ROL') return assignedRole;
-        if (col === 'ULTIMO_ACCESO') return usuario.ULTIMO_ACCESO;
-        if (col === 'MODIFICADO_POR') return email;
-        return usuario[col] ?? '';
-      });
-      await updateRow(SHEETS.USUARIOS, dataIndex, updatedRow);
+      const { error: updateErr } = await supabase.from('usuarios').update({
+        rol: assignedRole,
+        ultimo_acceso,
+        modificado_por: email
+      }).eq('id', usuario.id);
+      if (updateErr) throw updateErr;
     }
 
     const token = signToken({
-      id: usuario.ID,
-      nombre: usuario.NOMBRE,
-      apellido: usuario.APELLIDO,
-      email: usuario.EMAIL,
-      rol: usuario.ROL,
+      id: finalUser.id,
+      nombre: finalUser.nombre,
+      apellido: finalUser.apellido,
+      email: finalUser.email,
+      rol: finalUser.rol,
     });
 
     return NextResponse.json({
       token,
       user: {
-        id: usuario.ID,
-        nombre: usuario.NOMBRE,
-        apellido: usuario.APELLIDO,
-        email: usuario.EMAIL,
-        rol: usuario.ROL,
+        id: finalUser.id,
+        nombre: finalUser.nombre,
+        apellido: finalUser.apellido,
+        email: finalUser.email,
+        rol: finalUser.rol,
       },
     });
   } catch (err) {

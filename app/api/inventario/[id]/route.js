@@ -1,142 +1,65 @@
-// app/api/inventario/[id]/route.js
 import { NextResponse } from 'next/server';
-import { getSheetValues, rowsToObjects, updateRow, deleteRow, appendRow, SHEETS, nowAR, formatDate, formatTime, generateId } from '@/lib/sheets';
+import { supabase } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/auth';
+import { generateId, nowAR, formatDate, formatTime } from '@/lib/utils';
 
-export async function PUT(request, { params }) {
-  const payload = requireAdmin(request);
-  if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+async function updateItem(request, id, body, payload) {
+  const { data: item, error: fetchErr } = await supabase.from('inventario').select('*').eq('id', id).single();
+  if (fetchErr || !item) return NextResponse.json({ error: 'Ítem no encontrado' }, { status: 404 });
 
-  const { id } = await params;
-  const body = await request.json();
-
-  const rows = await getSheetValues(SHEETS.INVENTARIO);
-  const inventario = rowsToObjects(rows);
-  const idx = inventario.findIndex((i) => i.ID === id);
-  if (idx === -1) return NextResponse.json({ error: 'Ítem no encontrado' }, { status: 404 });
-
-  const item = inventario[idx];
-  const headers = rows[0];
-
-  // Campos editables
-  const updatable = [
-    'NOMBRE', 'CATEGORIA', 'STOCK_TOTAL',
-    'UNIDAD_MEDIDA', 'DESCRIPCION', 'STOCK_MINIMO', 'ACTIVO',
-  ];
-  const updatedRow = headers.map((h) => {
-    if (h === 'MODIFICADO_POR') return payload.email;
-    if (updatable.includes(h) && body[h.toLowerCase()] !== undefined) {
-      return String(body[h.toLowerCase()]);
+  const updates = { modificado_por: payload.email };
+  const updatable = ['nombre', 'categoria', 'stock_total', 'unidad_medida', 'descripcion', 'stock_minimo', 'activo'];
+  
+  for (const key of updatable) {
+    if (body[key] !== undefined) {
+      if (key === 'activo') {
+        updates[key] = String(body[key]).toUpperCase() === 'FALSE' ? 'FALSE' : 'TRUE';
+      } else {
+        updates[key] = body[key];
+      }
     }
-    return item[h] ?? '';
-  });
+  }
 
-  await updateRow(SHEETS.INVENTARIO, idx, updatedRow);
+  const { error } = await supabase.from('inventario').update(updates).eq('id', id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Registro en auditoría si cambió el stock o si se desactivó/activó
-  const oldStock = parseInt(item.STOCK_TOTAL, 10) || 0;
+  const oldStock = parseInt(item.stock_total, 10) || 0;
   const newStock = parseInt(body.stock_total ?? oldStock, 10);
-  const oldActivo = item.ACTIVO;
-  const newActivo = body.activo ?? oldActivo;
+  const oldActivo = item.activo;
+  const newActivo = updates.activo ?? oldActivo;
 
   if (oldStock !== newStock || oldActivo !== newActivo) {
     const now = nowAR();
     let accion = 'MODIFICACION_STOCK';
-    let obs = 'Modificación manual de stock';
     
-    if (oldActivo === 'TRUE' && newActivo === 'FALSE') {
-      accion = 'BAJA_ITEM';
-      obs = 'Ítem desactivado/dado de baja';
-    } else if (oldActivo === 'FALSE' && newActivo === 'TRUE') {
-      accion = 'ALTA_ITEM';
-      obs = 'Ítem reactivado';
-    } else if (newStock > oldStock) {
-      accion = 'AUMENTO_STOCK';
-    } else if (newStock < oldStock) {
-      accion = 'REDUCCION_STOCK';
-    }
+    if (oldActivo === 'TRUE' && newActivo === 'FALSE') accion = 'BAJA_ITEM';
+    else if (oldActivo === 'FALSE' && newActivo === 'TRUE') accion = 'ALTA_ITEM';
+    else if (newStock > oldStock) accion = 'AUMENTO_STOCK';
+    else if (newStock < oldStock) accion = 'REDUCCION_STOCK';
 
-    const auditoriaRow = [
-      generateId(),
-      formatDate(now),
-      formatTime(now),
-      id,
-      item.NOMBRE,
-      accion,
-      String(oldStock),
-      String(newStock),
-      payload.email,
-      obs
-    ];
-    await appendRow(SHEETS.AUDITORIA_STOCK, auditoriaRow);
+    await supabase.from('auditoria_stock').insert({
+      id: generateId(), fecha: formatDate(now), hora: formatTime(now), item_id: id, item_nombre: item.nombre,
+      accion, stock_anterior: oldStock, stock_nuevo: newStock, usuario: payload.email, diferencia: newStock - oldStock
+    });
   }
 
   return NextResponse.json({ success: true });
 }
 
+export async function PUT(request, { params }) {
+  const payload = requireAdmin(request);
+  if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  const { id } = await params;
+  const body = await request.json();
+  return updateItem(request, id, body, payload);
+}
+
 export async function PATCH(request, { params }) {
   const payload = requireAdmin(request);
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-
   const { id } = await params;
   const body = await request.json();
-
-  const rows = await getSheetValues(SHEETS.INVENTARIO);
-  const inventario = rowsToObjects(rows);
-  const idx = inventario.findIndex((i) => i.ID === id);
-  if (idx === -1) return NextResponse.json({ error: 'Ítem no encontrado' }, { status: 404 });
-
-  const item = inventario[idx];
-  const headers = rows[0];
-
-  const updatedRow = headers.map((h) => {
-    if (h === 'MODIFICADO_POR') return payload.email;
-    const key = h.toLowerCase();
-    if (body[key] !== undefined) return String(body[key]);
-    return item[h] ?? '';
-  });
-
-  await updateRow(SHEETS.INVENTARIO, idx, updatedRow);
-
-  // Registro en auditoría si cambió el stock o activo
-  const oldStock = parseInt(item.STOCK_TOTAL, 10) || 0;
-  const newStock = parseInt(body.stock_total ?? oldStock, 10);
-  const oldActivo = item.ACTIVO;
-  const newActivo = body.activo ?? oldActivo;
-
-  if (oldStock !== newStock || oldActivo !== newActivo) {
-    const now = nowAR();
-    let accion = 'MODIFICACION_STOCK';
-    let obs = 'Modificación manual de stock';
-    
-    if (oldActivo === 'TRUE' && String(newActivo) === 'FALSE') {
-      accion = 'BAJA_ITEM';
-      obs = 'Ítem desactivado/dado de baja';
-    } else if (oldActivo === 'FALSE' && String(newActivo) === 'TRUE') {
-      accion = 'ALTA_ITEM';
-      obs = 'Ítem reactivado';
-    } else if (newStock > oldStock) {
-      accion = 'AUMENTO_STOCK';
-    } else if (newStock < oldStock) {
-      accion = 'REDUCCION_STOCK';
-    }
-
-    const auditoriaRow = [
-      generateId(),
-      formatDate(now),
-      formatTime(now),
-      id,
-      item.NOMBRE,
-      accion,
-      String(oldStock),
-      String(newStock),
-      payload.email,
-      obs
-    ];
-    await appendRow(SHEETS.AUDITORIA_STOCK, auditoriaRow);
-  }
-
-  return NextResponse.json({ success: true });
+  return updateItem(request, id, body, payload);
 }
 
 export async function DELETE(request, { params }) {
@@ -144,16 +67,14 @@ export async function DELETE(request, { params }) {
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const { id } = await params;
-  const rows = await getSheetValues(SHEETS.INVENTARIO);
-  const inventario = rowsToObjects(rows);
-  const idx = inventario.findIndex((i) => i.ID === id);
-  if (idx === -1) return NextResponse.json({ error: 'Ítem no encontrado' }, { status: 404 });
+  const { data: item, error: fetchErr } = await supabase.from('inventario').select('stock_en_uso').eq('id', id).single();
+  if (fetchErr || !item) return NextResponse.json({ error: 'Ítem no encontrado' }, { status: 404 });
 
-  const item = inventario[idx];
-  if (parseInt(item.STOCK_EN_USO || 0) > 0) {
+  if (parseInt(item.stock_en_uso || 0) > 0) {
     return NextResponse.json({ error: 'No se puede eliminar un ítem con unidades en uso actualmente' }, { status: 400 });
   }
 
-  await deleteRow(SHEETS.INVENTARIO, idx);
+  const { error } = await supabase.from('inventario').delete().eq('id', id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
 }

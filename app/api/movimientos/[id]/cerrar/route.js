@@ -1,15 +1,7 @@
-// app/api/movimientos/[id]/cerrar/route.js
-// POST /api/movimientos/[id]/cerrar
-// Cierra un pendiente/incompleto con ítems no devueltos.
-// Body: { faltantes: [{nombre, cantidad}], observaciones }
-// Reduce STOCK_TOTAL y STOCK_DISPONIBLE (el ítem desaparece del stock)
-// Genera un registro en la tabla DESCUENTOS
 import { NextResponse } from 'next/server';
-import {
-  getSheetValues, rowsToObjects, updateRow, appendRow, SHEETS,
-  nowAR, formatDate, formatTime, generateId,
-} from '@/lib/sheets';
+import { supabase } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/auth';
+import { nowAR, formatDate, formatTime, generateId } from '@/lib/utils';
 
 export async function POST(request, { params }) {
   const payload = requireAdmin(request);
@@ -20,133 +12,84 @@ export async function POST(request, { params }) {
   try {
     const body = await request.json();
     const { faltantes = [], observaciones = '' } = body;
-    // faltantes: [{ nombre, cantidad }]
 
-    // ── 1. Cargar movimiento ──────────────────────────────────────────────────
-    const movRows = await getSheetValues(SHEETS.MOVIMIENTOS);
-    const movimientos = rowsToObjects(movRows);
-    const movIdx = movimientos.findIndex((m) => m.ID === id || m.ID_PLANILLA === id);
-    if (movIdx === -1) return NextResponse.json({ error: 'Movimiento no encontrado' }, { status: 404 });
+    const { data: mov, error: movErr } = await supabase.from('movimientos').select('*').or(`id.eq.${id},id_planilla.eq.${id}`).single();
+    if (movErr || !mov) return NextResponse.json({ error: 'Movimiento no encontrado' }, { status: 404 });
 
-    const mov = movimientos[movIdx];
-    if (!['PENDIENTE', 'INCOMPLETO'].includes(mov.ESTADO)) {
+    if (!['PENDIENTE', 'INCOMPLETO'].includes(mov.estado)) {
       return NextResponse.json({ error: 'Este movimiento ya está cerrado' }, { status: 400 });
     }
 
-    // ── 2. Cargar inventario ──────────────────────────────────────────────────
-    const invRows = await getSheetValues(SHEETS.INVENTARIO);
-    const inventario = rowsToObjects(invRows);
+    const { data: invItems } = await supabase.from('inventario').select('*');
 
-    // ── 3. Procesar cada ítem faltante (SIEMPRE ELIMINAR) ─────────────────────
     for (const faltante of faltantes) {
-      const { nombre, cantidad } = faltante;
-      const invIdx = inventario.findIndex((i) => i.NOMBRE === nombre);
-      if (invIdx === -1) continue;
+      const invItem = invItems?.find(i => i.nombre === faltante.nombre);
+      if (!invItem) continue;
 
-      const invItem = inventario[invIdx];
-      const headers = invRows[0];
+      const stockTotal = parseInt(invItem.stock_total, 10) || 0;
+      const stockEnUso = parseInt(invItem.stock_en_uso, 10) || 0;
+      const cantFaltante = parseInt(faltante.cantidad, 10) || 0;
 
-      const stockTotal     = parseInt(invItem.STOCK_TOTAL, 10)     || 0;
-      const stockEnUso     = parseInt(invItem.STOCK_EN_USO, 10)     || 0;
-      const cantFaltante   = parseInt(cantidad, 10)                 || 0;
-
-      // Reduce físicamente el stock total y en uso (ya que no se devuelve al disponible)
-      const newTotal  = Math.max(0, stockTotal - cantFaltante);
-      const newEnUso  = Math.max(0, stockEnUso - cantFaltante); // liberar el en-uso del faltante
-      let newActivo   = invItem.ACTIVO;
-
-      // Si el total llega a 0, el item ya no tiene unidades
+      const newTotal = Math.max(0, stockTotal - cantFaltante);
+      const newEnUso = Math.max(0, stockEnUso - cantFaltante);
+      let newActivo = invItem.activo;
       if (newTotal === 0) newActivo = 'FALSE';
 
-      const updatedRow = headers.map((h) => {
-        if (h === 'MODIFICADO_POR')   return payload.email;
-        if (h === 'STOCK_TOTAL')      return String(newTotal);
-        if (h === 'STOCK_EN_USO')     return String(newEnUso);
-        if (h === 'ACTIVO')           return newActivo;
-        return invItem[h] ?? '';
-      });
+      await supabase.from('inventario').update({
+        stock_total: newTotal,
+        stock_en_uso: newEnUso,
+        activo: newActivo,
+        modificado_por: payload.email
+      }).eq('id', invItem.id);
 
-      await updateRow(SHEETS.INVENTARIO, invIdx, updatedRow);
-
-      // Actualizar objeto local para evitar re-lectura
-      inventario[invIdx] = {
-        ...invItem,
-        STOCK_TOTAL: String(newTotal),
-        STOCK_EN_USO: String(newEnUso),
-        ACTIVO: newActivo,
-      };
-
-      // Registrar auditoría por el descuento
       if (cantFaltante > 0) {
-        const auditoriaRow = [
-          generateId(),
-          formatDate(nowAR()),
-          formatTime(nowAR()),
-          invItem.ID,
-          invItem.NOMBRE,
-          'REDUCCION_FALTANTE',
-          String(stockTotal),
-          String(newTotal),
-          payload.email,
-          `Reducción por faltante en Planilla ${mov.ID_PLANILLA}`
-        ];
-        await appendRow(SHEETS.AUDITORIA_STOCK, auditoriaRow);
+        await supabase.from('auditoria_stock').insert({
+          id: generateId(),
+          fecha: formatDate(nowAR()),
+          hora: formatTime(nowAR()),
+          item_id: invItem.id,
+          item_nombre: invItem.nombre,
+          accion: 'REDUCCION_FALTANTE',
+          stock_anterior: stockTotal,
+          stock_nuevo: newTotal,
+          usuario: payload.email,
+          diferencia: newTotal - stockTotal
+        });
       }
     }
 
-    // ── 4. Construir string de faltantes ──────────────────────────────────────
-    const faltantesStr = faltantes
-      .map((f) => `${f.nombre}:${f.cantidad}`)
-      .join(',');
-
-    // ── 5. Actualizar movimiento → CERRADO_CON_FALTANTES ────────────────────
-    const now = nowAR();
-    const movHeaders = movRows[0];
+    const faltantesStr = faltantes.map(f => `${f.nombre}:${f.cantidad}`).join(',');
     const obsActualizada = [
-      mov.OBSERVACIONES,
+      mov.observaciones,
       observaciones,
       faltantes.length > 0 ? `FALTANTES (ELIMINADOS): ${faltantesStr}` : '',
     ].filter(Boolean).join(' | ');
 
-    const updatedMov = movHeaders.map((h) => {
-      if (h === 'MODIFICADO_POR') return payload.email;
-      if (h === 'ESTADO')         return 'CERRADO_CON_FALTANTES';
-      if (h === 'HORA_INGRESO')   return mov.HORA_INGRESO || formatTime(now);
-      if (h === 'DIFERENCIA')     return faltantesStr || mov.DIFERENCIA || '';
-      if (h === 'OBSERVACIONES')  return obsActualizada;
-      return mov[h] ?? '';
-    });
+    await supabase.from('movimientos').update({
+      estado: 'CERRADO_CON_FALTANTES',
+      hora_ingreso: mov.hora_ingreso || formatTime(nowAR()),
+      diferencia: faltantesStr || mov.diferencia || '',
+      observaciones: obsActualizada,
+      modificado_por: payload.email
+    }).eq('id', mov.id);
 
-    await updateRow(SHEETS.MOVIMIENTOS, movIdx, updatedMov);
-
-    // ── 6. Generar registro en la tabla DESCUENTOS ────────────────────────────
     if (faltantes.length > 0) {
-      const descuentoId = generateId();
-      const descuentoRow = [
-        descuentoId,                             // ID
-        mov.ID_PLANILLA,                         // ID_PLANILLA
-        formatDate(now),                         // FECHA_CIERRE
-        formatTime(now),                         // HORA_CIERRE
-        mov.ALUMNO_RESPONSABLE,                  // ALUMNO
-        mov.CURSO,                               // CURSO
-        mov.MATERIA,                             // MATERIA
-        mov.PROFESOR,                            // PROFESOR
-        mov.PAÑOLERO,                            // PAÑOLERO (original)
-        faltantesStr,                            // ITEMS_FALTANTES
-        observaciones || 'Cierre de faltantes',  // OBSERVACIONES
-        payload.email,                           // CERRADO_POR (Admin actual)
-      ];
-      await appendRow(SHEETS.DESCUENTOS, descuentoRow);
+      await supabase.from('descuentos').insert({
+        id: generateId(),
+        id_movimiento: mov.id_planilla,
+        fecha: formatDate(nowAR()),
+        hora: formatTime(nowAR()),
+        alumno: mov.alumno_responsable,
+        curso: mov.curso,
+        item: faltantesStr,
+        cantidad: faltantes.reduce((acc, f) => acc + (parseInt(f.cantidad, 10) || 0), 0),
+        registrado_por: payload.email
+      });
     }
 
-    return NextResponse.json({
-      success: true,
-      estado: 'CERRADO_CON_FALTANTES',
-      faltantes: faltantesStr,
-    });
+    return NextResponse.json({ success: true, estado: 'CERRADO_CON_FALTANTES', faltantes: faltantesStr });
   } catch (err) {
-    console.error('Error cerrando pendiente con faltantes:', err);
+    console.error('Error cerrando pendiente:', err);
     return NextResponse.json({ error: 'Error interno al cerrar pendiente' }, { status: 500 });
   }
 }
-

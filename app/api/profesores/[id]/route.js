@@ -1,6 +1,5 @@
-// app/api/profesores/[id]/route.js
 import { NextResponse } from 'next/server';
-import { getSheetValues, rowsToObjects, updateRow, deleteRow, SHEETS } from '@/lib/sheets';
+import { supabase } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/auth';
 
 export async function PUT(request, { params }) {
@@ -10,23 +9,14 @@ export async function PUT(request, { params }) {
   const { id } = await params;
   const body = await request.json();
 
-  const rows = await getSheetValues(SHEETS.PROFESORES);
-  const profesores = rowsToObjects(rows);
-  const idx = profesores.findIndex((p) => p.ID === id);
-  if (idx === -1) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
+  const updates = { modificado_por: payload.email };
+  if (body.nombre !== undefined) updates.nombre = body.nombre;
+  if (body.apellido !== undefined) updates.apellido = body.apellido;
+  if (body.materias !== undefined) updates.materias = body.materias;
+  if (body.activo !== undefined) updates.activo = body.activo ? 'TRUE' : 'FALSE';
 
-  const prof = profesores[idx];
-  const headers = rows[0];
-  const updatedRow = headers.map((h) => {
-    if (h === 'MODIFICADO_POR') return payload.email;
-    if (h === 'NOMBRE' && body.nombre !== undefined) return body.nombre;
-    if (h === 'APELLIDO' && body.apellido !== undefined) return body.apellido;
-    if (h === 'MATERIA_ID' && body.materias !== undefined) return body.materias;
-    if (h === 'ACTIVO' && body.activo !== undefined) return body.activo ? 'TRUE' : 'FALSE';
-    return prof[h] ?? '';
-  });
-
-  await updateRow(SHEETS.PROFESORES, idx, updatedRow);
+  const { error } = await supabase.from('profesores').update(updates).eq('id', id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
 }
 
@@ -35,11 +25,7 @@ export async function DELETE(request, { params }) {
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const { id } = await params;
-  const rows = await getSheetValues(SHEETS.PROFESORES);
-  const profesores = rowsToObjects(rows);
-  const idx = profesores.findIndex((p) => p.ID === id);
-  if (idx === -1) return NextResponse.json({ error: 'Profesor no encontrado' }, { status: 404 });
-
-  await deleteRow(SHEETS.PROFESORES, idx);
+  const { error } = await supabase.from('profesores').delete().eq('id', id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
 }

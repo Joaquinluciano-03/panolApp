@@ -1,6 +1,5 @@
-// app/api/materias/[id]/route.js
 import { NextResponse } from 'next/server';
-import { getSheetValues, rowsToObjects, updateRow, deleteRow, SHEETS } from '@/lib/sheets';
+import { supabase } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/auth';
 
 export async function PUT(request, { params }) {
@@ -10,22 +9,13 @@ export async function PUT(request, { params }) {
   const { id } = await params;
   const body = await request.json();
 
-  const rows = await getSheetValues(SHEETS.MATERIAS);
-  const materias = rowsToObjects(rows);
-  const idx = materias.findIndex((m) => m.ID === id);
-  if (idx === -1) return NextResponse.json({ error: 'No encontrada' }, { status: 404 });
+  const updates = { modificado_por: payload.email };
+  if (body.nombre !== undefined) updates.nombre = body.nombre;
+  if (body.curso !== undefined) updates.curso = body.curso;
+  if (body.activo !== undefined) updates.activo = body.activo ? 'TRUE' : 'FALSE';
 
-  const materia = materias[idx];
-  const headers = rows[0];
-  const updatedRow = headers.map((h) => {
-    if (h === 'MODIFICADO_POR') return payload.email;
-    if (h === 'NOMBRE' && body.nombre !== undefined) return body.nombre;
-    if (h === 'CURSO' && body.curso !== undefined) return body.curso;
-    if (h === 'ACTIVO' && body.activo !== undefined) return body.activo ? 'TRUE' : 'FALSE';
-    return materia[h] ?? '';
-  });
-
-  await updateRow(SHEETS.MATERIAS, idx, updatedRow);
+  const { error } = await supabase.from('materias').update(updates).eq('id', id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
 }
 
@@ -34,11 +24,7 @@ export async function DELETE(request, { params }) {
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const { id } = await params;
-  const rows = await getSheetValues(SHEETS.MATERIAS);
-  const materias = rowsToObjects(rows);
-  const idx = materias.findIndex((m) => m.ID === id);
-  if (idx === -1) return NextResponse.json({ error: 'Materia no encontrada' }, { status: 404 });
-
-  await deleteRow(SHEETS.MATERIAS, idx);
+  const { error } = await supabase.from('materias').delete().eq('id', id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
 }

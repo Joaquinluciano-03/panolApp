@@ -1,19 +1,13 @@
-// app/api/movimientos/route.js
 import { NextResponse } from 'next/server';
-import {
-  getSheetValues, rowsToObjects, appendRow, SHEETS,
-  nowAR, formatDate, formatTime, generateId,
-} from '@/lib/sheets';
+import { supabase } from '@/lib/supabase';
 import { requireAuth } from '@/lib/auth';
-import { serializeItems } from '@/lib/utils';
+import { serializeItems, generateId, nowAR, formatDate, formatTime, mapToUpper } from '@/lib/utils';
 
-/** GET /api/movimientos — todos los movimientos (admin) o del día (pañolero) */
 export async function GET(request) {
   const payload = requireAuth(request);
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-  const rows = await getSheetValues(SHEETS.MOVIMIENTOS);
-  const movimientos = rowsToObjects(rows);
+  let query = supabase.from('movimientos').select('*').order('timestamp', { ascending: false });
 
   const { searchParams } = new URL(request.url);
   const estado = searchParams.get('estado');
@@ -25,20 +19,23 @@ export async function GET(request) {
   const alumno = searchParams.get('alumno');
   const q = searchParams.get('q');
 
-  let result = movimientos;
-
   if (payload.rol === 'PAÑOLERO' || solo_hoy === 'true') {
-    const hoy = formatDate(nowAR());
-    result = result.filter((m) => m.FECHA === hoy);
+    query = query.eq('fecha', formatDate(nowAR()));
   }
 
   if (estado) {
-    const estados = estado.split(',').map((s) => s.trim());
-    result = result.filter((m) => estados.includes(m.ESTADO));
+    const estados = estado.split(',').map(s => s.trim());
+    query = query.in('estado', estados);
   }
-  if (materia) result = result.filter((m) => m.MATERIA?.toLowerCase().includes(materia.toLowerCase()));
-  if (profesor) result = result.filter((m) => m.PROFESOR?.toLowerCase().includes(profesor.toLowerCase()));
-  if (alumno) result = result.filter((m) => m.ALUMNO_RESPONSABLE?.toLowerCase().includes(alumno.toLowerCase()));
+  if (materia) query = query.ilike('materia', `%${materia}%`);
+  if (profesor) query = query.ilike('profesor', `%${profesor}%`);
+  if (alumno) query = query.ilike('alumno_responsable', `%${alumno}%`);
+
+  const { data, error } = await query;
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  let result = mapToUpper(data);
+
   if (q) {
     const lq = q.toLowerCase();
     result = result.filter(
@@ -47,9 +44,10 @@ export async function GET(request) {
         m.PROFESOR?.toLowerCase().includes(lq) ||
         m.MATERIA?.toLowerCase().includes(lq) ||
         m.DNI_ALUMNO?.includes(lq) ||
-        m.ID_PLANILLA?.includes(lq)
+        m.ID_PLANILLA?.toLowerCase().includes(lq)
     );
   }
+  
   if (fecha_desde) {
     result = result.filter((m) => {
       const [d, mo, y] = (m.FECHA || '').split('/');
@@ -65,10 +63,9 @@ export async function GET(request) {
     });
   }
 
-  return NextResponse.json({ movimientos: result.reverse() });
+  return NextResponse.json({ movimientos: result });
 }
 
-/** POST /api/movimientos — registrar nuevo egreso */
 export async function POST(request) {
   const payload = requireAuth(request);
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
@@ -81,69 +78,49 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Campos obligatorios faltantes' }, { status: 400 });
     }
 
-    // Validar stock y actualizar inventario
-    const invRows = await getSheetValues(SHEETS.INVENTARIO);
-    const inventario = rowsToObjects(invRows);
+    const itemNames = items.map(i => i.nombre);
+    const { data: invItems, error: invErr } = await supabase.from('inventario').select('*').in('nombre', itemNames).eq('activo', 'TRUE');
+    if (invErr) throw invErr;
 
     for (const item of items) {
-      const invItem = inventario.find((i) => i.NOMBRE === item.nombre && i.ACTIVO === 'TRUE');
-      if (!invItem) return NextResponse.json({ error: `Ítem no encontrado: ${item.nombre}` }, { status: 400 });
-      const disponible = parseInt(invItem.STOCK_DISPONIBLE, 10);
+      const invItem = invItems.find((i) => i.nombre === item.nombre);
+      if (!invItem) return NextResponse.json({ error: `Ítem no encontrado o inactivo: ${item.nombre}` }, { status: 400 });
+      const disponible = parseInt(invItem.stock_total, 10) - parseInt(invItem.stock_en_uso, 10);
       if (item.cantidad > disponible) {
-        return NextResponse.json({
-          error: `Stock insuficiente para ${item.nombre}: disponible ${disponible}, solicitado ${item.cantidad}`,
-        }, { status: 400 });
+        return NextResponse.json({ error: `Stock insuficiente para ${item.nombre}: disponible ${disponible}, solicitado ${item.cantidad}` }, { status: 400 });
       }
     }
 
     // Actualizar inventario
     for (const item of items) {
-      const idx = inventario.findIndex((i) => i.NOMBRE === item.nombre);
-      const invItem = inventario[idx];
-      const newEnUso = parseInt(invItem.STOCK_EN_USO, 10) + item.cantidad;
-      const headers = invRows[0];
-      const updatedRow = headers.map((h) => {
-        if (h === 'MODIFICADO_POR') return payload.email;
-        if (h === 'STOCK_EN_USO') return String(newEnUso);
-        return invItem[h] ?? '';
-      });
-      await import('@/lib/sheets').then((m) => m.updateRow(SHEETS.INVENTARIO, idx, updatedRow));
+      const invItem = invItems.find(i => i.nombre === item.nombre);
+      const newEnUso = parseInt(invItem.stock_en_uso, 10) + item.cantidad;
+      await supabase.from('inventario').update({ stock_en_uso: newEnUso, modificado_por: payload.email }).eq('id', invItem.id);
     }
 
     const now = nowAR();
     const id = generateId();
     const idPlanilla = `P-${Date.now().toString(36).toUpperCase()}`;
-
     const itemsStr = serializeItems(items);
 
-    const row = [
-      id,                                      // 0: ID
-      idPlanilla,                              // 1: ID_PLANILLA
-      formatDate(now),                         // 2: FECHA
-      formatTime(now),                         // 3: HORA_EGRESO
-      alumno,                                  // 4: ALUMNO_RESPONSABLE
-      curso,                                   // 5: CURSO
-      materia,                                 // 6: MATERIA
-      profesor,                                // 7: PROFESOR
-      itemsStr,                                // 8: ITEMS_EGRESADOS
-      'PENDIENTE',                             // 9: ESTADO
-      payload.nombre + ' ' + payload.apellido, // 10: PAÑOLERO
-      '',                                      // 11: ITEMS_INGRESADOS
-      '',                                      // 12: HORA_INGRESO
-      '',                                      // 13: DIFERENCIA
-      observaciones || '',                     // 14: OBSERVACIONES
-      payload.email,                           // 15: MODIFICADO_POR
-    ];
-
-    await appendRow(SHEETS.MOVIMIENTOS, row);
-
-    return NextResponse.json({
-      success: true,
+    const { error: movErr } = await supabase.from('movimientos').insert({
       id,
-      idPlanilla,
+      id_planilla: idPlanilla,
       fecha: formatDate(now),
-      hora: formatTime(now),
-    }, { status: 201 });
+      hora_egreso: formatTime(now),
+      alumno_responsable: alumno,
+      curso,
+      materia,
+      profesor,
+      items_egresados: itemsStr,
+      estado: 'PENDIENTE',
+      panolero: `${payload.nombre} ${payload.apellido}`,
+      observaciones: observaciones || '',
+      modificado_por: payload.email
+    });
+    if (movErr) throw movErr;
+
+    return NextResponse.json({ success: true, id, idPlanilla, fecha: formatDate(now), hora: formatTime(now) }, { status: 201 });
   } catch (err) {
     console.error('Error registrando egreso:', err);
     return NextResponse.json({ error: 'Error interno al registrar egreso' }, { status: 500 });
