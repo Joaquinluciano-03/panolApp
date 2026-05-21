@@ -88,7 +88,8 @@ export default function MaestrosPage() {
   const openCreateProf = () => { setEditProf(null); setProfForm({ nombre: '', apellido: '', materias: [] }); setProfModal(true); };
   const openEditProf = (p) => {
     setEditProf(p);
-    setProfForm({ nombre: p.NOMBRE, apellido: p.APELLIDO, materias: p.MATERIA_ID ? p.MATERIA_ID.split(', ') : [] });
+    // La columna en Supabase se llama MATERIAS (string separado por coma)
+    setProfForm({ nombre: p.NOMBRE, apellido: p.APELLIDO, materias: p.MATERIAS ? p.MATERIAS.split(', ') : [] });
     setProfModal(true);
   };
 
@@ -110,7 +111,7 @@ export default function MaestrosPage() {
   };
 
   const toggleProf = async (p) => {
-    await authFetch(`/api/profesores/${p.ID}`, { method: 'PUT', body: JSON.stringify({ nombre: p.NOMBRE, apellido: p.APELLIDO, materias: p.MATERIA_ID, activo: p.ACTIVO !== 'TRUE' }) });
+    await authFetch(`/api/profesores/${p.ID}`, { method: 'PUT', body: JSON.stringify({ nombre: p.NOMBRE, apellido: p.APELLIDO, materias: p.MATERIAS, activo: p.ACTIVO !== 'TRUE' }) });
     toast('Estado actualizado', 'info');
     fetchAll();
   };
@@ -224,7 +225,7 @@ export default function MaestrosPage() {
                   {profesores.map((p) => (
                     <tr key={p.ID}>
                       <td className="px-4 py-3 text-white font-medium">{p.NOMBRE} {p.APELLIDO}</td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">{p.MATERIA_ID || '—'}</td>
+                      <td className="px-4 py-3 text-gray-400 text-xs">{p.MATERIAS || '—'}</td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex gap-2 justify-center">
                           <Button variant="ghost" size="xs" onClick={() => openEditProf(p)}><Pencil className="w-3.5 h-3.5" /></Button>
