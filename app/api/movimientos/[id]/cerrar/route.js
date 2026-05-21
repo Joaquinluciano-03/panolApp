@@ -13,14 +13,24 @@ export async function POST(request, { params }) {
     const body = await request.json();
     const { faltantes = [], observaciones = '' } = body;
 
-    const { data: mov, error: movErr } = await supabase.from('movimientos').select('*').or(`id.eq.${id},id_planilla.eq.${id}`).single();
-    if (movErr || !mov) return NextResponse.json({ error: 'Movimiento no encontrado' }, { status: 404 });
+    let mov = null;
+    const { data: byId } = await supabase.from('movimientos').select('*').eq('id', id).maybeSingle();
+    if (byId) { mov = byId; }
+    else {
+      const { data: byPlanilla } = await supabase.from('movimientos').select('*').eq('id_planilla', id).maybeSingle();
+      mov = byPlanilla;
+    }
+    if (!mov) return NextResponse.json({ error: 'Movimiento no encontrado' }, { status: 404 });
 
     if (!['PENDIENTE', 'INCOMPLETO'].includes(mov.estado)) {
       return NextResponse.json({ error: 'Este movimiento ya está cerrado' }, { status: 400 });
     }
 
-    const { data: invItems } = await supabase.from('inventario').select('*');
+    // Traer solo los items que son faltantes (no todo el inventario)
+    const faltanteNames = faltantes.map(f => f.nombre);
+    const { data: invItems } = faltanteNames.length > 0
+      ? await supabase.from('inventario').select('*').in('nombre', faltanteNames)
+      : { data: [] };
 
     for (const faltante of faltantes) {
       const invItem = invItems?.find(i => i.nombre === faltante.nombre);

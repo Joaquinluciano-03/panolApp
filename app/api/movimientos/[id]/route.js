@@ -8,8 +8,14 @@ export async function GET(request, { params }) {
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const { id } = await params;
-  const { data: mov, error } = await supabase.from('movimientos').select('*').or(`id.eq.${id},id_planilla.eq.${id}`).single();
-  if (error || !mov) return NextResponse.json({ error: 'Movimiento no encontrado' }, { status: 404 });
+  let mov = null;
+  const { data: byId } = await supabase.from('movimientos').select('*').eq('id', id).maybeSingle();
+  if (byId) { mov = byId; }
+  else {
+    const { data: byPlanilla } = await supabase.from('movimientos').select('*').eq('id_planilla', id).maybeSingle();
+    mov = byPlanilla;
+  }
+  if (!mov) return NextResponse.json({ error: 'Movimiento no encontrado' }, { status: 404 });
 
   return NextResponse.json({ movimiento: toUpperKeys(mov) });
 }
@@ -23,8 +29,14 @@ export async function PUT(request, { params }) {
     const body = await request.json();
     const { itemsIngresados, observaciones } = body;
 
-    const { data: mov, error: fetchErr } = await supabase.from('movimientos').select('*').or(`id.eq.${id},id_planilla.eq.${id}`).single();
-    if (fetchErr || !mov) return NextResponse.json({ error: 'Movimiento no encontrado' }, { status: 404 });
+    let mov = null;
+    const { data: byId } = await supabase.from('movimientos').select('*').eq('id', id).maybeSingle();
+    if (byId) { mov = byId; }
+    else {
+      const { data: byPlanilla } = await supabase.from('movimientos').select('*').eq('id_planilla', id).maybeSingle();
+      mov = byPlanilla;
+    }
+    if (!mov) return NextResponse.json({ error: 'Movimiento no encontrado' }, { status: 404 });
 
     if (mov.estado !== 'PENDIENTE' && mov.estado !== 'INCOMPLETO') {
       return NextResponse.json({ error: 'Este movimiento ya está completado o cerrado' }, { status: 400 });
@@ -53,14 +65,15 @@ export async function PUT(request, { params }) {
     const diferencia = calcDiferencia(mov.items_egresados, itemsIngStr);
     const estado = diferencia.length > 0 ? 'INCOMPLETO' : 'COMPLETADO';
 
-    // Actualizar inventario
+    // Actualizar inventario con stock fresco para evitar race conditions
     const itemNames = itemsIngresados.map(i => i.nombre);
     const { data: invItems } = await supabase.from('inventario').select('*').in('nombre', itemNames);
     
     for (const item of itemsIngresados) {
       const invItem = invItems?.find(i => i.nombre === item.nombre);
       if (!invItem) continue;
-      const newEnUso = Math.max(0, parseInt(invItem.stock_en_uso, 10) - item.cantidad);
+      const { data: fresh } = await supabase.from('inventario').select('stock_en_uso').eq('id', invItem.id).single();
+      const newEnUso = Math.max(0, parseInt(fresh?.stock_en_uso ?? invItem.stock_en_uso, 10) - item.cantidad);
       await supabase.from('inventario').update({ stock_en_uso: newEnUso, modificado_por: payload.email }).eq('id', invItem.id);
     }
 

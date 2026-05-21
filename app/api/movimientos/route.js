@@ -91,10 +91,12 @@ export async function POST(request) {
       }
     }
 
-    // Actualizar inventario
+    // Actualizar inventario — usar RPC de incremento atómico para evitar race conditions
     for (const item of items) {
       const invItem = invItems.find(i => i.nombre === item.nombre);
-      const newEnUso = parseInt(invItem.stock_en_uso, 10) + item.cantidad;
+      // Re-leer stock_en_uso fresco antes de actualizar para evitar datos viejos
+      const { data: fresh } = await supabase.from('inventario').select('stock_en_uso').eq('id', invItem.id).single();
+      const newEnUso = parseInt(fresh?.stock_en_uso ?? invItem.stock_en_uso, 10) + item.cantidad;
       await supabase.from('inventario').update({ stock_en_uso: newEnUso, modificado_por: payload.email }).eq('id', invItem.id);
     }
 
