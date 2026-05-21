@@ -92,10 +92,10 @@ export default function DashboardPage() {
   const pendientesHoy  = pendientes.filter((m) => m.FECHA === hoy);
   const completadosHoy = movHoy.filter((m) => m.ESTADO === 'COMPLETADO');
   const stockBajo      = inventario.filter(
-    (i) => i.ACTIVO === 'TRUE' && (parseInt(i.STOCK_TOTAL || 0, 10) - parseInt(i.STOCK_EN_USO || 0, 10)) <= parseInt(i.STOCK_MINIMO || 1)
+    (i) => (parseInt(i.STOCK_TOTAL || 0, 10) - parseInt(i.STOCK_EN_USO || 0, 10)) <= parseInt(i.STOCK_MINIMO || 1)
   );
-  // Items que están desactivados por faltantes (ACTIVO=FALSE y tienen STOCK_EN_USO=0)
-  const itemsPerdidos  = inventario.filter((i) => i.ACTIVO !== 'TRUE');
+  // Items perdidos se quitaron
+  const itemsPerdidos  = [];
 
   // Movimientos del mes actual (formato FECHA: DD/MM/YYYY)
   const currentDate = new Date();

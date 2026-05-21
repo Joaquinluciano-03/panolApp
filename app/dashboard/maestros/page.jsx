@@ -78,12 +78,6 @@ export default function MaestrosPage() {
     finally { setSaving(false); }
   };
 
-  const toggleMat = async (m) => {
-    await authFetch(`/api/materias/${m.ID}`, { method: 'PUT', body: JSON.stringify({ nombre: m.NOMBRE, curso: m.CURSO, activo: m.ACTIVO !== 'TRUE' }) });
-    toast('Estado actualizado', 'info');
-    fetchAll();
-  };
-
   // ── Profesores ────────────────────────────────────────────────────────────
   const openCreateProf = () => { setEditProf(null); setProfForm({ nombre: '', apellido: '', materias: [] }); setProfModal(true); };
   const openEditProf = (p) => {
@@ -108,12 +102,6 @@ export default function MaestrosPage() {
       fetchAll();
     } catch (err) { toast(err.message, 'error'); }
     finally { setSaving(false); }
-  };
-
-  const toggleProf = async (p) => {
-    await authFetch(`/api/profesores/${p.ID}`, { method: 'PUT', body: JSON.stringify({ nombre: p.NOMBRE, apellido: p.APELLIDO, materias: p.MATERIAS, activo: p.ACTIVO !== 'TRUE' }) });
-    toast('Estado actualizado', 'info');
-    fetchAll();
   };
 
   const handleDeleteMat = async (m) => {
@@ -161,7 +149,6 @@ export default function MaestrosPage() {
                   <tr className="text-xs text-gray-500 uppercase border-b border-gray-800/50">
                     <th className="px-4 py-3 text-left">Nombre</th>
                     <th className="px-4 py-3 text-left">Curso</th>
-                    <th className="px-4 py-3 text-center">Estado</th>
                     <th className="px-4 py-3 text-center">Acciones</th>
                   </tr>
                 </thead>
@@ -171,16 +158,8 @@ export default function MaestrosPage() {
                       <td className="px-4 py-3 text-white font-medium">{m.NOMBRE}</td>
                       <td className="px-4 py-3 text-gray-400 text-xs">{m.CURSO || '—'}</td>
                       <td className="px-4 py-3 text-center">
-                        <Badge variant={m.ACTIVO === 'TRUE' ? 'activo' : 'inactivo'}>
-                          {m.ACTIVO === 'TRUE' ? 'Activa' : 'Inactiva'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-center">
                         <div className="flex gap-2 justify-center">
                           <Button variant="ghost" size="xs" onClick={() => openEditMat(m)}><Pencil className="w-3.5 h-3.5" /></Button>
-                          <Button variant="ghost" size="xs" onClick={() => toggleMat(m)}>
-                            {m.ACTIVO === 'TRUE' ? 'Desactivar' : 'Activar'}
-                          </Button>
                           <Button
                             variant="ghost" size="xs"
                             onClick={() => setConfirmDeleteMat(m)}
@@ -229,9 +208,6 @@ export default function MaestrosPage() {
                       <td className="px-4 py-3 text-center">
                         <div className="flex gap-2 justify-center">
                           <Button variant="ghost" size="xs" onClick={() => openEditProf(p)}><Pencil className="w-3.5 h-3.5" /></Button>
-                          <Button variant="ghost" size="xs" onClick={() => toggleProf(p)}>
-                            {p.ACTIVO === 'TRUE' ? 'Desactivar' : 'Activar'}
-                          </Button>
                           <Button
                             variant="ghost" size="xs"
                             onClick={() => setConfirmDeleteProf(p)}

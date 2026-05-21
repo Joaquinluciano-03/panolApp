@@ -13,7 +13,6 @@ export async function GET(request) {
   // Seleccionar solo columnas necesarias, ordenar en BD
   let query = supabase.from('materias')
     .select('id, nombre, curso, activo, modificado_por')
-    .eq('activo', 'TRUE')
     .order('nombre', { ascending: true });
 
   // Búsqueda en BD

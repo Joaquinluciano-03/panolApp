@@ -101,7 +101,7 @@ export default function ReportesPage() {
         return inventario
           .filter(i => {
             const disponible = parseInt(i.STOCK_TOTAL, 10) - parseInt(i.STOCK_EN_USO, 10);
-            return i.ACTIVO === 'TRUE' && disponible <= parseInt(i.STOCK_MINIMO || 1);
+            return disponible <= parseInt(i.STOCK_MINIMO || 1);
           })
           .map(i => {
             const disponible = parseInt(i.STOCK_TOTAL, 10) - parseInt(i.STOCK_EN_USO, 10);
@@ -133,7 +133,7 @@ export default function ReportesPage() {
         }));
       case 'INVENTARIO':
         return inventario
-          .filter(i => i.ACTIVO === 'TRUE')
+
           .map(i => {
             const disponible = parseInt(i.STOCK_TOTAL, 10) - parseInt(i.STOCK_EN_USO, 10);
             return {

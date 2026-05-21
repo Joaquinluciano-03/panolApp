@@ -15,7 +15,7 @@ function ItemSearchable({ item, inventario, onChange }) {
 
   const filtered = inventario.filter((i) => {
     const disponible = parseInt(i.STOCK_TOTAL, 10) - parseInt(i.STOCK_EN_USO, 10);
-    return i.ACTIVO === 'TRUE' && disponible > 0 && i.NOMBRE.toLowerCase().includes(search.toLowerCase());
+    return disponible > 0 && i.NOMBRE.toLowerCase().includes(search.toLowerCase());
   });
 
   useEffect(() => { setSearch(item.nombre); }, [item.nombre]);
@@ -149,7 +149,7 @@ export default function EgresoPage() {
     const load = async () => {
       const [matRes, invRes] = await Promise.all([
         authFetch('/api/materias'),
-        authFetch('/api/inventario?solo_activos=true'),
+        authFetch('/api/inventario'),
       ]);
       const matData = await matRes.json();
       const invData = await invRes.json();

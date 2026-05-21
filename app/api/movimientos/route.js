@@ -63,8 +63,7 @@ export async function POST(request) {
     const { data: invItems, error: invErr } = await supabase
       .from('inventario')
       .select('id, nombre, stock_total, stock_en_uso')
-      .in('nombre', itemNames)
-      .eq('activo', 'TRUE');
+      .in('nombre', itemNames);
     if (invErr) throw invErr;
 
     for (const item of items) {

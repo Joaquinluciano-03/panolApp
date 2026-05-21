@@ -12,10 +12,8 @@ export async function GET(request) {
   const materia = searchParams.get('materia'); // usado por egreso/page.jsx para filtrar profesores por materia
 
   // Columnas reales: id, nombre, apellido, materias, activo, modificado_por
-  // (NO tiene created_at → ordenar por apellido)
   let query = supabase.from('profesores')
     .select('id, nombre, apellido, materias, activo, modificado_por')
-    .eq('activo', 'TRUE')
     .order('apellido', { ascending: true });
 
   // Búsqueda general por nombre/apellido/materias

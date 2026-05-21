@@ -69,23 +69,6 @@ export default function UsuariosPage() {
     finally { setSaving(false); }
   };
 
-  const toggleActivo = async (u) => {
-    if (u.ID === user?.id && u.ACTIVO === 'TRUE') {
-      toast('No podés desactivarte a vos mismo', 'warning'); return;
-    }
-    try {
-      await authFetch(`/api/usuarios/${u.ID}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          nombre: u.NOMBRE, apellido: u.APELLIDO, email: u.EMAIL, rol: u.ROL,
-          activo: u.ACTIVO !== 'TRUE',
-        }),
-      });
-      toast(`Usuario ${u.ACTIVO === 'TRUE' ? 'desactivado' : 'activado'}`, 'info');
-      fetchData();
-    } catch { toast('Error al cambiar estado', 'error'); }
-  };
-
   const handleDelete = async (u) => {
     try {
       const res = await authFetch(`/api/usuarios/${u.ID}`, { method: 'DELETE' });
@@ -191,14 +174,13 @@ export default function UsuariosPage() {
                   <th className="px-5 py-3 text-left">Usuario</th>
                   <th className="px-5 py-3 text-left">Email</th>
                   <th className="px-5 py-3 text-center">Rol</th>
-                  <th className="px-5 py-3 text-center">Estado</th>
                   <th className="px-5 py-3 text-left">Último acceso</th>
                   <th className="px-5 py-3 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((u) => (
-                  <tr key={u.ID} className={u.ACTIVO !== 'TRUE' ? 'opacity-50' : ''}>
+                  <tr key={u.ID}>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold
@@ -221,11 +203,6 @@ export default function UsuariosPage() {
                           : <><Users className="w-3 h-3 inline mr-1" />Estudiante</>}
                       </Badge>
                     </td>
-                    <td className="px-5 py-3 text-center">
-                      <Badge variant={u.ACTIVO === 'TRUE' ? 'activo' : 'inactivo'}>
-                        {u.ACTIVO === 'TRUE' ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </td>
                     <td className="px-5 py-3 text-gray-400 text-xs">{u.ULTIMO_ACCESO || '—'}</td>
                     <td className="px-5 py-3 text-center">
                       {u.EMAIL === PROTECTED_EMAIL ? (
@@ -234,14 +211,6 @@ export default function UsuariosPage() {
                         <div className="flex gap-2 justify-center">
                           <Button variant="ghost" size="xs" onClick={() => openEdit(u)}>
                             <Pencil className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant={u.ACTIVO === 'TRUE' ? 'ghost' : 'outline'}
-                            size="xs"
-                            onClick={() => toggleActivo(u)}
-                            disabled={u.ID === user?.id && u.ACTIVO === 'TRUE'}
-                          >
-                            {u.ACTIVO === 'TRUE' ? 'Desactivar' : 'Activar'}
                           </Button>
                           <Button
                             variant="ghost"

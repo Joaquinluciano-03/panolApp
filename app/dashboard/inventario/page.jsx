@@ -103,17 +103,6 @@ export default function InventarioPage() {
     finally { setSaving(false); }
   };
 
-  const toggleActivo = async (item) => {
-    try {
-      await authFetch(`/api/inventario/${item.ID}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ activo: item.ACTIVO !== 'TRUE' ? 'TRUE' : 'FALSE' }),
-      });
-      toast(`Ítem ${item.ACTIVO === 'TRUE' ? 'desactivado' : 'activado'}`, 'info');
-      fetchData();
-    } catch { toast('Error al cambiar estado', 'error'); }
-  };
-
   const handleDelete = async (item) => {
     try {
       const res = await authFetch(`/api/inventario/${item.ID}`, { method: 'DELETE' });
@@ -132,7 +121,7 @@ export default function InventarioPage() {
   });
 
   const stockBajo = inventario.filter(
-    (i) => i.ACTIVO === 'TRUE' && (parseInt(i.STOCK_TOTAL || 0, 10) - parseInt(i.STOCK_EN_USO || 0, 10)) <= parseInt(i.STOCK_MINIMO || 1)
+    (i) => (parseInt(i.STOCK_TOTAL || 0, 10) - parseInt(i.STOCK_EN_USO || 0, 10)) <= parseInt(i.STOCK_MINIMO || 1)
   );
 
   return (
@@ -210,7 +199,7 @@ export default function InventarioPage() {
                   const stockAlerta = disp <= min && disp > 0;
                   const sinStock = disp === 0;
                   return (
-                    <tr key={item.ID} className={item.ACTIVO !== 'TRUE' ? 'opacity-50' : ''}>
+                    <tr key={item.ID}>
                       <td className="px-5 py-3">
                         <p className="text-white font-medium">{item.NOMBRE}</p>
                         {item.DESCRIPCION && <p className="text-xs text-gray-500 truncate max-w-xs">{item.DESCRIPCION}</p>}
@@ -228,9 +217,7 @@ export default function InventarioPage() {
                           ? <Badge variant="alerta">Sin stock</Badge>
                           : stockAlerta
                           ? <Badge variant="pendiente">Stock bajo</Badge>
-                          : item.ACTIVO === 'TRUE'
-                          ? <Badge variant="activo">Activo</Badge>
-                          : <Badge variant="inactivo">Inactivo</Badge>}
+                          : <Badge variant="activo">En stock</Badge>}
                       </td>
                       {user?.rol === 'ADMIN' && (
                         <td className="px-5 py-3 text-center">
@@ -238,13 +225,7 @@ export default function InventarioPage() {
                             <Button variant="ghost" size="xs" onClick={() => openEdit(item)}>
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
-                            <Button
-                              variant={item.ACTIVO === 'TRUE' ? 'ghost' : 'outline'}
-                              size="xs"
-                              onClick={() => toggleActivo(item)}
-                            >
-                              {item.ACTIVO === 'TRUE' ? 'Desactivar' : 'Activar'}
-                            </Button>
+
                             <Button
                               variant="ghost"
                               size="xs"
