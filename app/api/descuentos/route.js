@@ -26,5 +26,24 @@ export async function GET(request) {
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (data && data.length > 0) {
+    const planillas = data.map(d => d.id_movimiento).filter(Boolean);
+    if (planillas.length > 0) {
+      const { data: movs } = await supabase
+        .from('movimientos')
+        .select('id_planilla, panolero')
+        .in('id_planilla', planillas);
+      
+      if (movs) {
+        const movMap = {};
+        movs.forEach(m => movMap[m.id_planilla] = m.panolero);
+        data.forEach(d => {
+          d.panolero = movMap[d.id_movimiento] || '—';
+        });
+      }
+    }
+  }
+
   return NextResponse.json({ descuentos: mapToUpper(data) });
 }

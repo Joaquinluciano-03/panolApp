@@ -36,6 +36,7 @@ export default function DescuentosPage() {
       !q ||
       d.ALUMNO?.toLowerCase().includes(lq) ||
       d.ID_MOVIMIENTO?.toLowerCase().includes(lq) ||
+      d.PANOLERO?.toLowerCase().includes(lq) ||
       d.ITEM?.toLowerCase().includes(lq)
     );
   });
@@ -59,7 +60,7 @@ export default function DescuentosPage() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <input
             type="text"
-            placeholder="Buscar por alumno, profesor, ítem, planilla…"
+            placeholder="Buscar por alumno, pañolero, ítem, planilla…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="w-full bg-gray-900 border border-gray-700 rounded-xl pl-10 pr-4 py-2.5 text-white
@@ -86,7 +87,7 @@ export default function DescuentosPage() {
                 <tr className="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-800/50">
                   <th className="px-6 py-3 text-left">Planilla</th>
                   <th className="px-6 py-3 text-left">Alumno</th>
-                  <th className="px-6 py-3 text-left">Materia / Profesor</th>
+                  <th className="px-6 py-3 text-left">Pañolero</th>
                   <th className="px-6 py-3 text-left">Ítems Eliminados</th>
                   <th className="px-6 py-3 text-left">Fecha Cierre</th>
                   <th className="px-6 py-3 text-left">Admin (Cerró)</th>
@@ -101,7 +102,7 @@ export default function DescuentosPage() {
                       <p className="text-xs text-gray-500">{d.CURSO}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-gray-400 text-xs italic">No registrado</p>
+                      <p className="text-gray-200">{d.PANOLERO}</p>
                     </td>
                     <td className="px-6 py-4 text-gray-300 text-xs max-w-xs">
                       <div className="space-y-0.5">

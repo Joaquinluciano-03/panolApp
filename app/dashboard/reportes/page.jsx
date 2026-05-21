@@ -175,7 +175,7 @@ export default function ReportesPage() {
         return descuentos
           .filter(d => {
             if (!fechaDesde && !fechaHasta) return true;
-            const [day, mo, y] = (d.FECHA_CIERRE || '').split('/');
+            const [day, mo, y] = (d.FECHA || '').split('/');
             if (!y) return true;
             const t = new Date(y, mo - 1, day);
             if (fechaDesde && t < new Date(fechaDesde)) return false;
@@ -186,6 +186,7 @@ export default function ReportesPage() {
             'Fecha': d.FECHA,
             'Hora': d.HORA,
             'Planilla Original': d.ID_MOVIMIENTO,  // columna real en Supabase
+            'Pañolero': d.PANOLERO || '—',
             'Alumno': d.ALUMNO,
             'Curso': d.CURSO,
             'Ítems Eliminados': d.ITEM,             // columna real en Supabase
