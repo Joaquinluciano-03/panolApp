@@ -35,10 +35,8 @@ export default function DescuentosPage() {
     return (
       !q ||
       d.ALUMNO?.toLowerCase().includes(lq) ||
-      d.PROFESOR?.toLowerCase().includes(lq) ||
-      d.ID_PLANILLA?.toLowerCase().includes(lq) ||
-      d.MATERIA?.toLowerCase().includes(lq) ||
-      d.ITEMS_FALTANTES?.toLowerCase().includes(lq)
+      d.ID_MOVIMIENTO?.toLowerCase().includes(lq) ||
+      d.ITEM?.toLowerCase().includes(lq)
     );
   });
 
@@ -97,19 +95,18 @@ export default function DescuentosPage() {
               <tbody>
                 {filtered.map((d) => (
                   <tr key={d.ID} className="border-l-2 border-l-red-500/50 bg-red-500/5 hover:bg-red-500/10">
-                    <td className="px-6 py-4 font-mono text-xs text-gray-400">{d.ID_PLANILLA}</td>
+                    <td className="px-6 py-4 font-mono text-xs text-gray-400">{d.ID_MOVIMIENTO || '—'}</td>
                     <td className="px-6 py-4">
                       <p className="text-white font-medium">{d.ALUMNO}</p>
                       <p className="text-xs text-gray-500">{d.CURSO}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-gray-200">{d.MATERIA}</p>
-                      <p className="text-xs text-gray-500">{d.PROFESOR}</p>
+                      <p className="text-gray-400 text-xs italic">No registrado</p>
                     </td>
                     <td className="px-6 py-4 text-gray-300 text-xs max-w-xs">
                       <div className="space-y-0.5">
-                        {d.ITEMS_FALTANTES?.split(',').map((item, i) => {
-                          const [nombre, cant] = item.split(':');
+                        {d.ITEM?.split(',').map((part, i) => {
+                          const [nombre, cant] = part.split(':');
                           return (
                             <div key={i} className="flex justify-between gap-3">
                               <span className="text-red-300 font-medium">{nombre?.trim()}</span>
@@ -118,19 +115,15 @@ export default function DescuentosPage() {
                           );
                         })}
                       </div>
-                      {d.OBSERVACIONES && (
-                        <p className="mt-2 text-xs text-gray-500 border-t border-gray-700 pt-1 italic">
-                          {d.OBSERVACIONES}
-                        </p>
-                      )}
+                      <p className="mt-1 text-xs text-gray-500">Total: {d.CANTIDAD} unidades</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-gray-300">{d.HORA_CIERRE}</p>
-                      <p className="text-xs text-gray-600">{d.FECHA_CIERRE}</p>
+                      <p className="text-gray-300">{d.HORA}</p>
+                      <p className="text-xs text-gray-600">{d.FECHA}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-gray-300 text-xs truncate max-w-[150px]" title={d.CERRADO_POR}>
-                        {d.CERRADO_POR}
+                      <p className="text-gray-300 text-xs truncate max-w-[150px]" title={d.REGISTRADO_POR}>
+                        {d.REGISTRADO_POR}
                       </p>
                     </td>
                   </tr>

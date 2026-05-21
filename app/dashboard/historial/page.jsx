@@ -35,7 +35,7 @@ function MovimientoModal({ mov, onClose }) {
           ['Hora egreso', mov.HORA_EGRESO], ['Hora ingreso', mov.HORA_INGRESO || '—'],
           ['Estado', mov.ESTADO], ['Alumno', mov.ALUMNO_RESPONSABLE],
           ['Curso', mov.CURSO], ['Materia', mov.MATERIA], ['Profesor', mov.PROFESOR],
-          ['Pañolero', mov.PAÑOLERO],
+          ['Pañolero', mov.PANOLERO],
         ].map(([k, v]) => (
           <div key={k} className="bg-gray-800/30 rounded-xl p-3">
             <p className="text-xs text-gray-500">{k}</p>
@@ -300,7 +300,7 @@ export default function HistorialPage() {
                       <td className="px-5 py-3">
                         <Badge variant={m.ESTADO?.toLowerCase()}>{m.ESTADO}</Badge>
                       </td>
-                      <td className="px-5 py-3 text-gray-400 text-xs">{m.PAÑOLERO}</td>
+                      <td className="px-5 py-3 text-gray-400 text-xs">{m.PANOLERO}</td>
                     </tr>
                   ))}
                 </tbody>
