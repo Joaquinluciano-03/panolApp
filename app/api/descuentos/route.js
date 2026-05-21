@@ -14,6 +14,7 @@ export async function GET(request) {
   const fecha_hasta = searchParams.get('fecha_hasta');
   const limit = Math.min(parseInt(searchParams.get('limit') || '200', 10), 500);
 
+  // created_at existe en la tabla descuentos → ordenar por él
   let query = supabase.from('descuentos').select('*')
     .order('created_at', { ascending: false })
     .limit(limit);

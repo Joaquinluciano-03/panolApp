@@ -17,21 +17,21 @@ export async function GET(request) {
   const alumno = searchParams.get('alumno');
   const q = searchParams.get('q');
 
-  // Construir toda la query antes de ejecutarla
+  // created_at existe en la tabla → ordenar por él (timestamp real con índice)
   let query = supabase.from('movimientos').select(
-    'id, id_planilla, fecha, hora_egreso, hora_ingreso, alumno_responsable, curso, materia, profesor, items_egresados, items_ingresados, diferencia, estado, panolero, observaciones, modificado_por, created_at'
+    'id, id_planilla, fecha, hora_egreso, hora_ingreso, alumno_responsable, curso, materia, profesor, items_egresados, items_ingresados, diferencia, estado, panolero, observaciones, modificado_por'
   ).order('created_at', { ascending: false });
 
-  // Filtro "solo hoy" — fecha exacta en string DD/MM/YYYY
+  // Filtro "solo hoy" — fecha es string DD/MM/YYYY
   if (payload.rol === 'PAÑOLERO' || solo_hoy === 'true') {
     query = query.eq('fecha', formatDate(nowAR()));
   }
 
-  // Filtro rango de fechas usando created_at (columna real con índice)
+  // Filtros de rango usando created_at (columna real con índice)
   if (fecha_desde) query = query.gte('created_at', new Date(fecha_desde + 'T00:00:00').toISOString());
   if (fecha_hasta) query = query.lte('created_at', new Date(fecha_hasta + 'T23:59:59').toISOString());
 
-  // Resto de filtros en SQL
+  // Resto de filtros SQL
   if (estado) query = query.in('estado', estado.split(',').map(s => s.trim()));
   if (materia) query = query.ilike('materia', `%${materia}%`);
   if (profesor) query = query.ilike('profesor', `%${profesor}%`);
@@ -42,10 +42,8 @@ export async function GET(request) {
     );
   }
 
-  // Ejecutar UNA sola vez con todos los filtros aplicados
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
   return NextResponse.json({ movimientos: mapToUpper(data) });
 }
 

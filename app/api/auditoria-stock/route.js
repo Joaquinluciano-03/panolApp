@@ -15,8 +15,9 @@ export async function GET(request) {
   const fecha_hasta = searchParams.get('fecha_hasta');
   const limit = Math.min(parseInt(searchParams.get('limit') || '200', 10), 500);
 
+  // created_at existe en auditoria_stock → ordenar por él
   let query = supabase.from('auditoria_stock').select(
-    'id, fecha, hora, item_id, item_nombre, accion, stock_anterior, stock_nuevo, diferencia, usuario, created_at'
+    'id, fecha, hora, item_id, item_nombre, accion, stock_anterior, stock_nuevo, diferencia, usuario'
   ).order('created_at', { ascending: false }).limit(limit);
 
   if (item_nombre) query = query.ilike('item_nombre', `%${item_nombre}%`);

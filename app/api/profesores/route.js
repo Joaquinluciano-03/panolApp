@@ -9,15 +9,19 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q');
+  const materia = searchParams.get('materia'); // usado por egreso/page.jsx para filtrar profesores por materia
 
-  // Seleccionar solo columnas necesarias, ordenar por apellido en BD
+  // Columnas reales: id, nombre, apellido, materias, activo, modificado_por
+  // (NO tiene created_at → ordenar por apellido)
   let query = supabase.from('profesores')
     .select('id, nombre, apellido, materias, activo, modificado_por')
     .eq('activo', 'TRUE')
     .order('apellido', { ascending: true });
 
-  // Búsqueda de texto en BD, no en JS
+  // Búsqueda general por nombre/apellido/materias
   if (q) query = query.or(`nombre.ilike.%${q}%,apellido.ilike.%${q}%,materias.ilike.%${q}%`);
+  // Filtro específico por materia (usado desde egreso para mostrar solo profes de esa materia)
+  if (materia) query = query.ilike('materias', `%${materia}%`);
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
