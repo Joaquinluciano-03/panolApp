@@ -13,11 +13,10 @@ function ItemSearchable({ item, inventario, onChange }) {
   const [search, setSearch] = useState(item.nombre);
   const wrapperRef = useRef(null);
 
-  const filtered = inventario.filter((i) => 
-    i.ACTIVO === 'TRUE' && 
-    parseInt(i.STOCK_DISPONIBLE) > 0 && 
-    i.NOMBRE.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = inventario.filter((i) => {
+    const disponible = parseInt(i.STOCK_TOTAL, 10) - parseInt(i.STOCK_EN_USO, 10);
+    return i.ACTIVO === 'TRUE' && disponible > 0 && i.NOMBRE.toLowerCase().includes(search.toLowerCase());
+  });
 
   useEffect(() => { setSearch(item.nombre); }, [item.nombre]);
 
@@ -65,7 +64,7 @@ function ItemSearchable({ item, inventario, onChange }) {
               }}
               className="px-3 py-2 text-sm text-white hover:bg-gray-700 cursor-pointer border-b border-gray-700/50 last:border-0"
             >
-              {i.NOMBRE} <span className="text-gray-400 text-xs ml-1">({i.STOCK_DISPONIBLE} disp.)</span>
+              {i.NOMBRE} <span className="text-gray-400 text-xs ml-1">({parseInt(i.STOCK_TOTAL, 10) - parseInt(i.STOCK_EN_USO, 10)} disp.)</span>
             </div>
           ))}
         </div>
@@ -81,7 +80,7 @@ function ItemSearchable({ item, inventario, onChange }) {
 
 function ItemRow({ item, inventario, onChange, onRemove, index }) {
   const invItem = inventario.find((i) => i.NOMBRE === item.nombre);
-  const disponible = invItem ? parseInt(invItem.STOCK_DISPONIBLE) : 0;
+  const disponible = invItem ? parseInt(invItem.STOCK_TOTAL || 0, 10) - parseInt(invItem.STOCK_EN_USO || 0, 10) : 0;
   const excede = item.cantidad > disponible;
 
   return (
@@ -176,7 +175,7 @@ export default function EgresoPage() {
   const hasErrors = items.some((item) => {
     if (!item.nombre) return false;
     const inv = inventario.find((i) => i.NOMBRE === item.nombre);
-    return inv && item.cantidad > parseInt(inv.STOCK_DISPONIBLE);
+    return inv && item.cantidad > (parseInt(inv.STOCK_TOTAL || 0, 10) - parseInt(inv.STOCK_EN_USO || 0, 10));
   });
 
   const handleSubmit = async (e) => {

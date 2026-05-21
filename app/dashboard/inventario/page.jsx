@@ -69,7 +69,7 @@ export default function InventarioPage() {
       nombre: item.NOMBRE, categoria: item.CATEGORIA,
       stock_total: item.STOCK_TOTAL, unidad_medida: item.UNIDAD_MEDIDA,
       descripcion: item.DESCRIPCION, stock_minimo: item.STOCK_MINIMO,
-      stock_disponible: item.STOCK_DISPONIBLE,
+      stock_disponible: parseInt(item.STOCK_TOTAL || 0, 10) - parseInt(item.STOCK_EN_USO || 0, 10),
     });
     setModalOpen(true);
   };
@@ -85,7 +85,7 @@ export default function InventarioPage() {
           method: 'PUT',
           body: JSON.stringify({
             nombre: form.nombre, categoria: form.categoria,
-            stock_total: form.stock_total, stock_disponible: form.stock_disponible ?? editItem.STOCK_DISPONIBLE,
+            stock_total: form.stock_total,
             unidad_medida: form.unidad_medida, descripcion: form.descripcion,
             stock_minimo: form.stock_minimo,
           }),
@@ -132,7 +132,7 @@ export default function InventarioPage() {
   });
 
   const stockBajo = inventario.filter(
-    (i) => i.ACTIVO === 'TRUE' && parseInt(i.STOCK_DISPONIBLE) <= parseInt(i.STOCK_MINIMO || 1)
+    (i) => i.ACTIVO === 'TRUE' && (parseInt(i.STOCK_TOTAL || 0, 10) - parseInt(i.STOCK_EN_USO || 0, 10)) <= parseInt(i.STOCK_MINIMO || 1)
   );
 
   return (
@@ -154,7 +154,7 @@ export default function InventarioPage() {
           <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-red-300">
             <strong>{stockBajo.length} ítems</strong> con stock bajo o agotado:{' '}
-            {stockBajo.map((i) => `${i.NOMBRE} (${i.STOCK_DISPONIBLE})`).join(', ')}
+            {stockBajo.map((i) => `${i.NOMBRE} (${parseInt(i.STOCK_TOTAL || 0, 10) - parseInt(i.STOCK_EN_USO || 0, 10)})`).join(', ')}
           </p>
         </div>
       )}
@@ -204,7 +204,7 @@ export default function InventarioPage() {
               </thead>
               <tbody>
                 {filtered.map((item) => {
-                  const disp = parseInt(item.STOCK_DISPONIBLE);
+                  const disp = parseInt(item.STOCK_TOTAL || 0, 10) - parseInt(item.STOCK_EN_USO || 0, 10);
                   const min = parseInt(item.STOCK_MINIMO || 1);
                   const stockOk = disp > min;
                   const stockAlerta = disp <= min && disp > 0;
@@ -218,9 +218,7 @@ export default function InventarioPage() {
                       <td className="px-5 py-3 text-gray-300">{item.CATEGORIA}</td>
                       <td className="px-5 py-3 text-center text-gray-300">{item.STOCK_TOTAL}</td>
                       <td className="px-5 py-3 text-center">
-                        <span className={`font-semibold ${stockOk ? 'text-green-400' : stockAlerta ? 'text-blue-400' : 'text-red-400'}`}>
-                          {item.STOCK_DISPONIBLE}
-                        </span>
+                          {disp}
                       </td>
                       <td className="px-5 py-3 text-center text-blue-400">{item.STOCK_EN_USO || 0}</td>
                       <td className="px-5 py-3 text-gray-400 text-xs">{item.UNIDAD_MEDIDA}</td>

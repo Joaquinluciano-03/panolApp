@@ -92,7 +92,7 @@ export default function DashboardPage() {
   const pendientesHoy  = pendientes.filter((m) => m.FECHA === hoy);
   const completadosHoy = movHoy.filter((m) => m.ESTADO === 'COMPLETADO');
   const stockBajo      = inventario.filter(
-    (i) => i.ACTIVO === 'TRUE' && parseInt(i.STOCK_DISPONIBLE) <= parseInt(i.STOCK_MINIMO || 1)
+    (i) => i.ACTIVO === 'TRUE' && (parseInt(i.STOCK_TOTAL || 0, 10) - parseInt(i.STOCK_EN_USO || 0, 10)) <= parseInt(i.STOCK_MINIMO || 1)
   );
   // Items que están desactivados por faltantes (ACTIVO=FALSE y tienen STOCK_EN_USO=0)
   const itemsPerdidos  = inventario.filter((i) => i.ACTIVO !== 'TRUE');
@@ -178,7 +178,7 @@ export default function DashboardPage() {
               {stockBajo.length} ítem{stockBajo.length > 1 ? 's' : ''} con stock bajo
             </p>
             <p className="text-xs text-red-400/70 mt-0.5">
-              {stockBajo.map((i) => `${i.NOMBRE} (${i.STOCK_DISPONIBLE} disponible)`).join(' · ')}
+              {stockBajo.map((i) => `${i.NOMBRE} (${parseInt(i.STOCK_TOTAL || 0, 10) - parseInt(i.STOCK_EN_USO || 0, 10)} disponible)`).join(' · ')}
             </p>
           </div>
         </div>

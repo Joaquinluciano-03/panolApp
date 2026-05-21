@@ -97,17 +97,23 @@ export default function ReportesPage() {
             'Pañolero': m.PAÑOLERO || m['PA\u00d1OLERO'] || '',
             'Ítems a devolver': parseItems(m.ITEMS_EGRESADOS).map(i => `${i.nombre} (x${i.cantidad})`).join(', '),
           }));
-      case 'FALTANTES':
+      case 'FALTANTES': {
         return inventario
-          .filter(i => i.ACTIVO === 'TRUE' && parseInt(i.STOCK_DISPONIBLE) <= parseInt(i.STOCK_MINIMO || 1))
-          .map(i => ({
-            'Ítem': i.NOMBRE,
-            'Categoría': i.CATEGORIA,
-            'Stock Total': i.STOCK_TOTAL,
-            'Disponible': i.STOCK_DISPONIBLE,
-            'Mínimo Requerido': i.STOCK_MINIMO,
-            'En Uso': i.STOCK_EN_USO,
-          }));
+          .filter(i => {
+            const disponible = parseInt(i.STOCK_TOTAL, 10) - parseInt(i.STOCK_EN_USO, 10);
+            return i.ACTIVO === 'TRUE' && disponible <= parseInt(i.STOCK_MINIMO || 1);
+          })
+          .map(i => {
+            const disponible = parseInt(i.STOCK_TOTAL, 10) - parseInt(i.STOCK_EN_USO, 10);
+            return {
+              'Ítem': i.NOMBRE,
+              'Categoría': i.CATEGORIA,
+              'Stock Total': i.STOCK_TOTAL,
+              'Disponible': disponible,
+              'Mínimo Requerido': i.STOCK_MINIMO,
+              'En Uso': i.STOCK_EN_USO,
+            };
+          });}
       case 'MOVIMIENTOS':
         return movimientos.map(m => ({
           'Fecha': m.FECHA,
@@ -128,15 +134,18 @@ export default function ReportesPage() {
       case 'INVENTARIO':
         return inventario
           .filter(i => i.ACTIVO === 'TRUE')
-          .map(i => ({
-            'Ítem': i.NOMBRE,
-            'Categoría': i.CATEGORIA,
-            'Stock Total': i.STOCK_TOTAL,
-            'Disponible': i.STOCK_DISPONIBLE,
-            'En Uso': i.STOCK_EN_USO,
-            'Mínimo': i.STOCK_MINIMO,
-            'Unidad': i.UNIDAD_MEDIDA,
-          }));
+          .map(i => {
+            const disponible = parseInt(i.STOCK_TOTAL, 10) - parseInt(i.STOCK_EN_USO, 10);
+            return {
+              'Ítem': i.NOMBRE,
+              'Categoría': i.CATEGORIA,
+              'Stock Total': i.STOCK_TOTAL,
+              'Disponible': disponible,
+              'En Uso': i.STOCK_EN_USO,
+              'Mínimo': i.STOCK_MINIMO,
+              'Unidad': i.UNIDAD_MEDIDA,
+            };
+          });
       case 'MAS_USADOS': {
         const usage = {};
         movimientos.forEach(m => {
@@ -152,11 +161,12 @@ export default function ReportesPage() {
           .sort((a, b) => b[1] - a[1])
           .map(([nombre, cantidad]) => {
             const inv = inventario.find(i => i.NOMBRE === nombre);
+            const disponible = inv ? parseInt(inv.STOCK_TOTAL, 10) - parseInt(inv.STOCK_EN_USO, 10) : '-';
             return {
               'Ítem': nombre,
               'Categoría': inv?.CATEGORIA || '-',
               'Total Egresado': cantidad,
-              'Stock Actual': inv?.STOCK_DISPONIBLE || '-',
+              'Stock Actual': disponible,
               'Stock Mínimo': inv?.STOCK_MINIMO || '-',
             };
           });
@@ -173,16 +183,14 @@ export default function ReportesPage() {
             return true;
           })
           .map(d => ({
-            'Fecha Cierre': d.FECHA_CIERRE,
-            'Hora Cierre': d.HORA_CIERRE,
-            'Planilla Original': d.ID_PLANILLA,
+            'Fecha': d.FECHA,
+            'Hora': d.HORA,
+            'Planilla Original': d.ID_MOVIMIENTO,  // columna real en Supabase
             'Alumno': d.ALUMNO,
             'Curso': d.CURSO,
-            'Materia': d.MATERIA,
-            'Profesor': d.PROFESOR,
-            'Ítems Eliminados': d.ITEMS_FALTANTES,
-            'Observaciones': d.OBSERVACIONES || '',
-            'Cerrado Por (Admin)': d.CERRADO_POR,
+            'Ítems Eliminados': d.ITEM,             // columna real en Supabase
+            'Cantidad': d.CANTIDAD,
+            'Registrado Por': d.REGISTRADO_POR,    // columna real en Supabase
           }));
       case 'AUDITORIA':
         return auditoria
@@ -200,10 +208,10 @@ export default function ReportesPage() {
             'Hora': a.HORA,
             'Ítem': a.ITEM_NOMBRE,
             'Acción': a.ACCION,
-            'Cant. Anterior': a.CANTIDAD_ANTERIOR,
-            'Cant. Nueva': a.CANTIDAD_NUEVA,
+            'Cant. Anterior': a.STOCK_ANTERIOR,   // columna real en Supabase
+            'Cant. Nueva': a.STOCK_NUEVO,          // columna real en Supabase
+            'Diferencia': a.DIFERENCIA,
             'Usuario (Admin)': a.USUARIO,
-            'Observaciones': a.OBSERVACIONES || '',
           }));
       default:
         return [];
