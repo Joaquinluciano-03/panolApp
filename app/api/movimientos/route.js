@@ -7,22 +7,41 @@ export async function GET(request) {
   const payload = requireAuth(request);
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-  let query = supabase.from('movimientos').select('*').order('timestamp', { ascending: false });
-
   const { searchParams } = new URL(request.url);
   const estado = searchParams.get('estado');
   const solo_hoy = searchParams.get('solo_hoy');
-  const fecha_desde = searchParams.get('fecha_desde');
-  const fecha_hasta = searchParams.get('fecha_hasta');
+  const fecha_desde = searchParams.get('fecha_desde');  // formato YYYY-MM-DD
+  const fecha_hasta = searchParams.get('fecha_hasta');  // formato YYYY-MM-DD
   const materia = searchParams.get('materia');
   const profesor = searchParams.get('profesor');
   const alumno = searchParams.get('alumno');
   const q = searchParams.get('q');
 
+  // Seleccionar solo columnas necesarias, ordenado en BD (el host no toca los datos)
+  let query = supabase.from('movimientos').select(
+    'id, id_planilla, fecha, hora_egreso, hora_ingreso, alumno_responsable, curso, materia, profesor, items_egresados, items_ingresados, diferencia, estado, panolero, observaciones, modificado_por, timestamp'
+  ).order('timestamp', { ascending: false });
+
+  // ── Filtros 100% en SQL ──────────────────────────────────────────────────────
+
+  // Filtro de fecha por día actual — usa la columna timestamp (nativa SQL DATE)
   if (payload.rol === 'PAÑOLERO' || solo_hoy === 'true') {
-    query = query.eq('fecha', formatDate(nowAR()));
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    query = query.gte('timestamp', todayStart.toISOString()).lte('timestamp', todayEnd.toISOString());
   }
 
+  // Filtro de rango de fechas — usa timestamp directamente, sin procesamiento JS
+  if (fecha_desde) {
+    query = query.gte('timestamp', new Date(fecha_desde + 'T00:00:00').toISOString());
+  }
+  if (fecha_hasta) {
+    query = query.lte('timestamp', new Date(fecha_hasta + 'T23:59:59').toISOString());
+  }
+
+  // Filtros de estado, materia, profesor, alumno — todos en SQL
   if (estado) {
     const estados = estado.split(',').map(s => s.trim());
     query = query.in('estado', estados);
@@ -31,39 +50,17 @@ export async function GET(request) {
   if (profesor) query = query.ilike('profesor', `%${profesor}%`);
   if (alumno) query = query.ilike('alumno_responsable', `%${alumno}%`);
 
+  // Búsqueda general de texto — SQL, no JS
+  if (q) {
+    query = query.or(
+      `alumno_responsable.ilike.%${q}%,profesor.ilike.%${q}%,materia.ilike.%${q}%,id_planilla.ilike.%${q}%`
+    );
+  }
+
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  let result = mapToUpper(data);
-
-  if (q) {
-    const lq = q.toLowerCase();
-    result = result.filter(
-      (m) =>
-        m.ALUMNO_RESPONSABLE?.toLowerCase().includes(lq) ||
-        m.PROFESOR?.toLowerCase().includes(lq) ||
-        m.MATERIA?.toLowerCase().includes(lq) ||
-        m.DNI_ALUMNO?.includes(lq) ||
-        m.ID_PLANILLA?.toLowerCase().includes(lq)
-    );
-  }
-  
-  if (fecha_desde) {
-    result = result.filter((m) => {
-      const [d, mo, y] = (m.FECHA || '').split('/');
-      const t = new Date(y, mo - 1, d);
-      return t >= new Date(fecha_desde);
-    });
-  }
-  if (fecha_hasta) {
-    result = result.filter((m) => {
-      const [d, mo, y] = (m.FECHA || '').split('/');
-      const t = new Date(y, mo - 1, d);
-      return t <= new Date(fecha_hasta);
-    });
-  }
-
-  return NextResponse.json({ movimientos: result });
+  return NextResponse.json({ movimientos: mapToUpper(data) });
 }
 
 export async function POST(request) {
@@ -78,8 +75,13 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Campos obligatorios faltantes' }, { status: 400 });
     }
 
+    // Consulta optimizada: solo traer los campos necesarios de los ítems requeridos
     const itemNames = items.map(i => i.nombre);
-    const { data: invItems, error: invErr } = await supabase.from('inventario').select('*').in('nombre', itemNames).eq('activo', 'TRUE');
+    const { data: invItems, error: invErr } = await supabase
+      .from('inventario')
+      .select('id, nombre, stock_total, stock_en_uso')
+      .in('nombre', itemNames)
+      .eq('activo', 'TRUE');
     if (invErr) throw invErr;
 
     for (const item of items) {
@@ -91,10 +93,9 @@ export async function POST(request) {
       }
     }
 
-    // Actualizar inventario — usar RPC de incremento atómico para evitar race conditions
+    // Actualizar inventario — re-lectura fresca por item para evitar race conditions
     for (const item of items) {
       const invItem = invItems.find(i => i.nombre === item.nombre);
-      // Re-leer stock_en_uso fresco antes de actualizar para evitar datos viejos
       const { data: fresh } = await supabase.from('inventario').select('stock_en_uso').eq('id', invItem.id).single();
       const newEnUso = parseInt(fresh?.stock_en_uso ?? invItem.stock_en_uso, 10) + item.cantidad;
       await supabase.from('inventario').update({ stock_en_uso: newEnUso, modificado_por: payload.email }).eq('id', invItem.id);

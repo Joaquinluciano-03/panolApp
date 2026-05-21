@@ -6,7 +6,20 @@ import { generateId, mapToUpper } from '@/lib/utils';
 export async function GET(request) {
   const payload = requireAuth(request);
   if (!payload) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  const { data, error } = await supabase.from('profesores').select('*').eq('activo', 'TRUE');
+
+  const { searchParams } = new URL(request.url);
+  const q = searchParams.get('q');
+
+  // Seleccionar solo columnas necesarias, ordenar por apellido en BD
+  let query = supabase.from('profesores')
+    .select('id, nombre, apellido, materias, activo, modificado_por')
+    .eq('activo', 'TRUE')
+    .order('apellido', { ascending: true });
+
+  // Búsqueda de texto en BD, no en JS
+  if (q) query = query.or(`nombre.ilike.%${q}%,apellido.ilike.%${q}%,materias.ilike.%${q}%`);
+
+  const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ profesores: mapToUpper(data) });
 }
